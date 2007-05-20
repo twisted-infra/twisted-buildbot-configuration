@@ -51,16 +51,25 @@ class QuickTwistedBuildFactory(TwistedBaseFactory):
             self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
             self.addStep(TwistedTrial, python=p, testChanges=True)
 
+
+
+class TwistedDocumentationBuildFactory(TwistedBaseFactory):
+    treeStableTimer = 5 * 60
+
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(self, source)
+        self.addStep(CheckDocumentation)
+        self.addStep(ProcessDocs)
+
+
+
 class FullTwistedBuildFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 
     def __init__(self, source, python="python",
-                 processDocs=False, runTestsRandomly=False,
+                 runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[]):
         TwistedBaseFactory.__init__(self, source)
-        if processDocs:
-            self.addStep(CheckDocumentation)
-            self.addStep(ProcessDocs)
 
         if type(python) == str:
             python = [python]
@@ -73,6 +82,7 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
         self.addStep(RemovePYCs)
         self.addStep(TwistedTrial, python=python, randomly=runTestsRandomly)
 
+
 class TwistedDebsBuildFactory(TwistedBaseFactory):
     treeStableTimer = 10*60
 
@@ -80,6 +90,7 @@ class TwistedDebsBuildFactory(TwistedBaseFactory):
         TwistedBaseFactory.__init__(self, source)
         self.addStep(ProcessDocs, haltOnFailure=True)
         self.addStep(BuildDebs, warnOnWarnings=True)
+
 
 class TwistedReactorsBuildFactory(TwistedBaseFactory):
     treeStableTimer = 5*60

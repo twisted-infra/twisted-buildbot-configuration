@@ -1,13 +1,13 @@
-#! /usr/bin/python
-
-# Build classes specific to the Twisted codebase
+"""
+Build classes specific to the Twisted codebase
+"""
 
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
 from buildbot.steps import shell
 
-from twisted_steps import import HLint, ProcessDocs, BuildDebs, \
-     Trial, RemovePYCs
+from twisted_steps import HLint, ProcessDocs, BuildDebs, \
+    Trial, RemovePYCs, CheckDocumentation
 
 class TwistedBuild(Build):
     workdir = "Twisted" # twisted's bin/trial expects to live in here
@@ -59,6 +59,7 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
                  compileOpts=[], compileOpts2=[]):
         TwistedBaseFactory.__init__(self, source)
         if processDocs:
+            self.addStep(CheckDocumentation)
             self.addStep(ProcessDocs)
 
         if type(python) == str:

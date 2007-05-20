@@ -799,8 +799,25 @@ class BuildDebs(ShellCommand):
             return ["%d lintian" % (self.errors + self.warnings)]
         return []
 
+
 class RemovePYCs(ShellCommand):
     name = "remove-.pyc"
     command = 'find . -name "*.pyc" | xargs rm'
     description = ["removing", ".pyc", "files"]
     descriptionDone = ["remove", ".pycs"]
+
+
+class CheckDocumentation(ShellCommand):
+    """
+    Run Pydoctor over the source to check for errors in API
+    documentation.
+    """
+    name = 'api-documentation'
+    command = (
+        'pydoctor '
+        '--quiet '
+        '--make-html '
+        '--system-class pydoctor.twistedmodel.TwistedSystem '
+        '--add-package `pwd`/twisted')
+    description = ["checking", "api", "docs"]
+    descriptionDone = ["api", "docs"]

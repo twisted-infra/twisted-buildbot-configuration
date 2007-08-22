@@ -814,7 +814,8 @@ class CheckDocumentation(ShellCommand):
     """
     name = 'api-documentation'
     command = (
-        'pydoctor '
+        'python2.5 '
+        '~/Projects/pydoctor/trunk/bin/pydoctor '
         '--quiet '
         '--make-html '
         '--system-class pydoctor.twistedmodel.TwistedSystem '

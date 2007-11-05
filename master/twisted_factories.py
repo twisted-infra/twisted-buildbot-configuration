@@ -5,9 +5,13 @@ Build classes specific to the Twisted codebase
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
 from buildbot.steps import shell
+from buildbot.steps.shell import ShellCommand
 
 from twisted_steps import HLint, ProcessDocs, BuildDebs, \
     Trial, RemovePYCs, CheckDocumentation
+
+
+TRIAL_FLAGS = ["--reporter=bwverbose", "--unclean-warnings"]
 
 class TwistedBuild(Build):
     workdir = "Twisted" # twisted's bin/trial expects to live in here
@@ -23,7 +27,7 @@ class TwistedTrial(Trial):
     # the Trial in Twisted >=2.1.0 has --recurse on by default, and -to
     # turned into --reporter=bwverbose .
     recurse = False
-    trialMode = ["--reporter=bwverbose"]
+    trialMode = TRIAL_FLAGS
     testpath = None
     trial = "./bin/trial"
 
@@ -35,6 +39,7 @@ class TwistedBaseFactory(BuildFactory):
 
     def __init__(self, source):
         BuildFactory.__init__(self, [source])
+
 
 class QuickTwistedBuildFactory(TwistedBaseFactory):
     treeStableTimer = 30
@@ -130,3 +135,60 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
             self.addStep(TwistedTrial, name=reactor, python=python,
                          reactor=reactor, flunkOnFailure=flunkOnFailure,
                          warnOnFailure=warnOnFailure)
+
+
+class Win32RemovePYCs(ShellCommand):
+    name = "remove-.pyc"
+    command = 'del /s *.pyc'
+    description = ["removing", ".pyc", "files"]
+    descriptionDone = ["remove", ".pycs"]
+
+
+class GoodTrial(TwistedTrial):
+    trialMode = TRIAL_FLAGS + ["--force-gc"]
+
+
+class GoodTwistedBuildFactory(TwistedBaseFactory):
+    treeStableTimer = 5 * 60
+
+    def __init__(self, source, python="python",
+                 processDocs=False, runTestsRandomly=False,
+                 compileOpts=[], compileOpts2=[]):
+        TwistedBaseFactory.__init__(self, source)
+        if processDocs:
+            self.addStep(ProcessDocs)
+
+        if type(python) == str:
+            python = [python]
+        assert isinstance(compileOpts, list)
+        assert isinstance(compileOpts2, list)
+        cmd = (python + compileOpts + ["setup.py", "build_ext"]
+               + compileOpts2 + ["-i"])
+
+        self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
+        self.addStep(RemovePYCs)
+        self.addStep(GoodTrial, python=python, randomly=runTestsRandomly)
+
+
+class TwistedReactorsBuildFactory(TwistedBaseFactory):
+    treeStableTimer = 5*60
+
+    def __init__(self, source, RemovePYCs=RemovePYCs,
+                 python="python", compileOpts=[], compileOpts2=[],
+                 reactors=["select"]):
+        TwistedBaseFactory.__init__(self, source)
+
+        if type(python) == str:
+            python = [python]
+        assert isinstance(compileOpts, list)
+        assert isinstance(compileOpts2, list)
+        cmd = (python + compileOpts + ["setup.py", "build_ext"]
+               + compileOpts2 + ["-i"])
+
+        self.addStep(shell.Compile, command=cmd, warnOnFailure=True)
+
+        for reactor in reactors:
+            self.addStep(RemovePYCs)
+            self.addStep(TwistedTrial, name=reactor, python=python,
+                         reactor=reactor, flunkOnFailure=True,
+                         warnOnFailure=False)

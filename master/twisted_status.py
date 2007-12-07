@@ -1,5 +1,5 @@
 
-from buildbot.status.web.base import ICurrentBox, HtmlResource, Box, map_branches, build_get_class
+from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class
 
 from nevow import tags
 from nevow.url import URL
@@ -55,11 +55,12 @@ class TenBoxesPerBuilder(HtmlResource):
                         label = None
                     if not label or len(str(label)) > 20:
                         label = "#%d" % b.getNumber()
-                    label = [flatten(tags.a(href=url)[label])]
-                    label.extend(b.getText())
-                    box = Box(label, b.getColor(),
-                              class_="LastBuild box %s" % build_get_class(b))
-                    row[tags.xml(box.td(align="center"))]
+                    row[
+                        tags.td(align="center", bgcolor=b.getColor(),
+                           class_=("LastBuild box ", build_get_class(b)))[[
+                            (element, tags.br)
+                            for element
+                            in [tags.a(href=url)[label]] + b.getText()]]]
             else:
                 row[tags.td(class_="LastBuild box")["no build"]]
         return flatten(tag)

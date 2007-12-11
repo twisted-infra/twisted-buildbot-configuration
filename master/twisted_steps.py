@@ -332,6 +332,7 @@ class Trial(ShellCommand):
                        timeout.
         """
         ShellCommand.__init__(self, **kwargs)
+        self.workdir = self.remote_kwargs['workdir']
 
         if python:
             self.python = python

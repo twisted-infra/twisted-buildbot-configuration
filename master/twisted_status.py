@@ -24,6 +24,7 @@ class TenBoxesPerBuilder(HtmlResource):
         
         builders = req.args.get("builder", status.getBuilderNames())
         branches = [b for b in req.args.get("branch", []) if b]
+        num_builds = int(req.args.get("num_builds", ["10"])[0])
 
         tag = tags.div()
         tag[tags.h2["Latest builds: ", ", ".join(branches)]]
@@ -41,7 +42,7 @@ class TenBoxesPerBuilder(HtmlResource):
             row[tags.xml(current_box.td(align="center"))]
 
             builds = list(builder.generateFinishedBuilds(map_branches(branches),
-                                                         num_builds=10))
+                                                         num_builds=num_builds))
             if builds:
                 for b in builds:
                     url = URL.fromString(self.path_to_root(req) or "./")

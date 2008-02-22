@@ -4,8 +4,9 @@ Build classes specific to the Twisted codebase
 
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
-from buildbot.steps import shell
+from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
+from buildbot.steps.source import Bzr
 
 from twisted_steps import HLint, ProcessDocs, BuildDebs, \
     Trial, RemovePYCs, CheckDocumentation
@@ -207,3 +208,37 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
                 name=reactor, python=python,
                 reactor=reactor, flunkOnFailure=True,
                 warnOnFailure=False)
+
+
+class PyOpenSSLBuildFactory(BuildFactory):
+    """
+    Build and test PyOpenSSL.
+    """
+    def __init__(self, versions, bdistOutputFilename,
+                 bdistPackageFilenameFormat, buildSourcePackage=True):
+        BuildFactory.__init__(self, [])
+        self.uploadBase = 'public_html/builds/'
+        self.addStep(
+             Bzr,
+             baseURL="http://bazaar.launchpad.net/~exarkun/pyopenssl/",
+             defaultBranch="trunk",
+             mode="copy")
+        if buildSourcePackage:
+            self.addStep(
+                shell.Compile,
+                command=["python", "setup.py", "sdist"],
+                flunkOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc='dist/pyOpenSSL-0.7.tar.gz',
+                masterdest=self.uploadBase + 'pyOpenSSL-dev.tar.gz')
+        for pyVersion in versions:
+            python = "python" + pyVersion
+            self.addStep(
+                shell.Compile,
+                command=[python, "setup.py", "bdist"],
+                flunkOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc='dist/' + bdistOutputFilename,
+                masterdest=self.uploadBase + bdistPackageFilenameFormat % {'version': pyVersion})

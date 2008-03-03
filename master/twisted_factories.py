@@ -210,12 +210,11 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
                 warnOnFailure=False)
 
 
-class PyOpenSSLBuildFactory(BuildFactory):
+class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    def __init__(self, versions, bdistOutputFilename,
-                 bdistPackageFilenameFormat, buildSourcePackage=True):
+    def __init__(self, versions):
         BuildFactory.__init__(self, [])
         self.uploadBase = 'public_html/builds/'
         self.addStep(
@@ -223,7 +222,16 @@ class PyOpenSSLBuildFactory(BuildFactory):
              baseURL="http://bazaar.launchpad.net/~exarkun/pyopenssl/",
              defaultBranch="trunk",
              mode="copy")
-        if buildSourcePackage:
+
+
+
+class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
+    """
+    Build and test a Linux PyOpenSSL package.
+    """
+    def __init__(self, versions, source, platform):
+        PyOpenSSLBuildFactoryBase.__init__(self, [])
+        if source:
             self.addStep(
                 shell.Compile,
                 command=["python", "setup.py", "sdist"],
@@ -240,5 +248,40 @@ class PyOpenSSLBuildFactory(BuildFactory):
                 flunkOnFailure=True)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc='dist/' + bdistOutputFilename,
-                masterdest=self.uploadBase + bdistPackageFilenameFormat % {'version': pyVersion})
+                slavesrc='dist/pyOpenSSL-0.7.' + platform + '.tar.gz',
+                masterdest='%spyOpenSSL-dev.py%s.%s.tar.gz' % (
+                    self.uploadBase, pyVersion, platform))
+
+
+
+class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
+    """
+    Build and test a Win32 PyOpenSSL package.
+    """
+    def __init__(self):
+        PyOpenSSLBuildFactoryBase.__init__(self, [])
+        python = "python"
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "bdist"],
+            flunkOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc='dist/pyOpenSSL-0.7.win32.zip',
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32.zip')
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "bdist_wininst"],
+            flunkOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc='dist/pyOpenSSL-0.7.win32-py2.5.exe',
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32-py2.5.exe')
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "bdist_msi"],
+            flunkOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc='dist/pyOpenSSL-0.7.win32-py2.5.msi',
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32-py2.5.msi')

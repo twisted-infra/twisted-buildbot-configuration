@@ -227,7 +227,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
 
 class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
-    Build and test a Linux PyOpenSSL package.
+    Build and test a Linux (or Linux-like) PyOpenSSL package.
     """
     def __init__(self, versions, source, platform):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
@@ -252,6 +252,25 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 masterdest='%spyOpenSSL-dev.py%s.%s.tar.gz' % (
                     self.uploadBase, pyVersion, platform))
 
+
+
+class DebianPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
+    """
+    Build and test a Debian (or Debian-derivative) PyOpenSSL package.
+    """
+    def __init__(self, versions, source, platform, distro, packageFiles):
+        LinuxPyOpenSSLBuildFactory.__init__(self, versions, source, platform)
+        self.addStep(
+            shell.ShellCommand,
+            command=["cp", "-a", distro, "debian"])
+        self.addStep(
+            shell.ShellCommand,
+            command=["fakeroot", "make", "-f", "debian/rules", "binary"])
+        for fileName in packageFiles:
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc="../" + fileName,
+                masterdest=self.uploadBase + fileName)
 
 
 class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):

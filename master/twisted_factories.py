@@ -247,6 +247,13 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 command=[python, "setup.py", "bdist"],
                 flunkOnFailure=True)
             self.addStep(
+                Trial,
+                workdir="build/build/lib.%s-%s" % (platform, pyVersion),
+                python=python,
+                trial="/usr/bin/trial",
+                tests="OpenSSL",
+                testpath=None)
+            self.addStep(
                 transfer.FileUpload,
                 slavesrc='dist/pyOpenSSL-0.7.' + platform + '.tar.gz',
                 masterdest='%spyOpenSSL-dev.py%s.%s.tar.gz' % (

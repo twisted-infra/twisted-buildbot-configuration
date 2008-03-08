@@ -229,6 +229,14 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Linux (or Linux-like) PyOpenSSL package.
     """
+    def trial(self, version):
+        """
+        Return the path to the trial script for the given version of
+        Python.
+        """
+        return "/usr/bin/trial"
+
+
     def __init__(self, versions, source, platform):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
         if source:
@@ -250,7 +258,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 Trial,
                 workdir="build/build/lib.%s-%s" % (platform, pyVersion),
                 python=python,
-                trial="/usr/bin/trial",
+                trial=self.trial(pyVersion),
                 tests="OpenSSL",
                 testpath=None)
             self.addStep(
@@ -278,6 +286,26 @@ class DebianPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
                 transfer.FileUpload,
                 slavesrc="../" + fileName,
                 masterdest=self.uploadBase + fileName)
+
+
+
+class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
+    """
+    Build and test an OS-X PyOpenSSL package.
+    """
+    def trial(self, version):
+        """
+        Return the path to the trial script in the framework.
+        """
+        if version == "2.5":
+            return "/Library/Frameworks/Python.framework/Versions/2.4/bin/trial" # OHWELL
+        elif version == "2.4":
+            return "/Library/Frameworks/Python.framework/Versions/2.4/bin/trial"
+        elif version == "2.3":
+            return "/System/Library/Frameworks/Python.framework/Versions/2.3/bin/trial"
+        else:
+            raise ValueError("Unknown Python version")
+
 
 
 class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):

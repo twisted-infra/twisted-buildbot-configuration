@@ -312,9 +312,13 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Win32 PyOpenSSL package.
     """
-    def __init__(self):
+    def __init__(self, compiler):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
         python = "python"
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "build_ext", "--compiler", compiler],
+            flunkOnFailure=True)
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "bdist"],

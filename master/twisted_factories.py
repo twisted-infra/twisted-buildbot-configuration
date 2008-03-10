@@ -312,7 +312,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Win32 PyOpenSSL package.
     """
-    def __init__(self, compiler):
+    def __init__(self, platform, compiler):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
         python = "python"
         self.addStep(
@@ -326,7 +326,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             transfer.FileUpload,
             slavesrc='dist/pyOpenSSL-0.7.win32.zip',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32.zip')
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s.zip' % (platform,))
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "bdist_wininst"],
@@ -334,7 +334,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             transfer.FileUpload,
             slavesrc='dist/pyOpenSSL-0.7.win32-py2.5.exe',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32-py2.5.exe')
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py2.5.exe' % (platform,))
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "bdist_msi"],
@@ -342,4 +342,4 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             transfer.FileUpload,
             slavesrc='dist/pyOpenSSL-0.7.win32-py2.5.msi',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.win32-py2.5.msi')
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py2.5.msi' % (platform,))

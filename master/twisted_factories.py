@@ -237,8 +237,26 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         return "/usr/bin/trial"
 
 
-    def __init__(self, versions, source, platform):
+    def platform(self, version):
+        return self._platform
+
+
+    def binaryFilename(self, version):
+        """
+        Return the basename of the output of the I{bdist} command of
+        distutils for the given version of Python.
+        """
+        return 'pyOpenSSL-0.7.' + self.platform(version) + '.tar.gz'
+
+
+    def binaryUploadFilename(self, version):
+        return 'pyOpenSSL-dev.py%s.%s.tar.gz' % (
+            version, self.platform(version))
+
+
+    def __init__(self, versions, source, platform=None):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
+        self._platform = platform
         if source:
             self.addStep(
                 shell.Compile,
@@ -256,16 +274,16 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 flunkOnFailure=True)
             self.addStep(
                 Trial,
-                workdir="build/build/lib.%s-%s" % (platform, pyVersion),
+                workdir="build/build/lib.%s-%s" % (self.platform(pyVersion), pyVersion),
                 python=python,
                 trial=self.trial(pyVersion),
                 tests="OpenSSL",
                 testpath=None)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc='dist/pyOpenSSL-0.7.' + platform + '.tar.gz',
-                masterdest='%spyOpenSSL-dev.py%s.%s.tar.gz' % (
-                    self.uploadBase, pyVersion, platform))
+                slavesrc='dist/' + self.binaryFilename(pyVersion),
+                masterdest=(self.uploadBase + '/' +
+                            self.binaryUploadFilename(pyVersion)))
 
 
 
@@ -305,6 +323,15 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
             return "/System/Library/Frameworks/Python.framework/Versions/2.3/bin/trial"
         else:
             raise ValueError("Unknown Python version")
+
+
+    def platform(self, version):
+        if version == "2.5":
+            return "macosx-10.3-ppc"
+        elif version == "2.4":
+            return "macosx-10.4-fat"
+        elif version == "2.3":
+            return "darwin-8.10.0-Power_Macintosh"
 
 
 

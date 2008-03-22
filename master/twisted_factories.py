@@ -112,47 +112,6 @@ class TwistedDebsBuildFactory(TwistedBaseFactory):
         self.addStep(BuildDebs, warnOnWarnings=True)
 
 
-class TwistedReactorsBuildFactory(TwistedBaseFactory):
-    treeStableTimer = 5*60
-
-    def __init__(self, source,
-                 python="python", compileOpts=[], compileOpts2=[],
-                 reactors=None, uncleanWarnings=True):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
-
-        if type(python) == str:
-            python = [python]
-        assert isinstance(compileOpts, list)
-        assert isinstance(compileOpts2, list)
-        cmd = (python + compileOpts + ["setup.py", "build_ext"]
-               + compileOpts2 + ["-i"])
-
-        self.addStep(shell.Compile, command=cmd, warnOnFailure=True)
-
-        if reactors == None:
-            reactors = [
-                'gtk2',
-                'gtk',
-                #'kqueue',
-                'poll',
-                'c',
-                'qt',
-                #'win32',
-                ]
-        for reactor in reactors:
-            flunkOnFailure = 1
-            warnOnFailure = 0
-            #if reactor in ['c', 'qt', 'win32']:
-            #    # these are buggy, so tolerate failures for now
-            #    flunkOnFailure = 0
-            #    warnOnFailure = 1
-            self.addStep(RemovePYCs) # TODO: why?
-            self.addTrialStep(
-                name=reactor, python=python,
-                reactor=reactor, flunkOnFailure=flunkOnFailure,
-                warnOnFailure=warnOnFailure)
-
-
 class Win32RemovePYCs(ShellCommand):
     name = "remove-.pyc"
     command = 'del /s *.pyc'
@@ -208,6 +167,36 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
                 name=reactor, python=python,
                 reactor=reactor, flunkOnFailure=True,
                 warnOnFailure=False)
+
+
+class TwistedEasyInstallFactory(TwistedBaseFactory):
+    treeStableTimer = 5*60
+
+    def __init__(self, source, uncleanWarnings, python="python",
+                 reactor="epoll", easy_install="easy_install"):
+        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
+        if type(python) == str:
+            python = [python]
+
+
+        setupCommands = [
+            ["rm", "install", "-rf"],
+            ["mkdir", "install"],
+            ["mkdir", "install/bin"],
+            ["mkdir", "install/lib"],
+            [easy_install, "--install-dir", "install/lib",
+                           "--script-dir", "install/bin",
+                           "."],
+            ]
+        for command in setupCommands:
+            self.addStep(shell.ShellCommand, command=command,
+                         env={"PYTHONPATH": "install/lib"},
+                         flunkOnFailure=True)
+        self.addTrialStep(
+            name=reactor, python=python,
+            reactor=reactor, flunkOnFailure=True,
+            warnOnFailure=False, workdir="Twisted/install",
+            env={"PYTHONPATH": "lib"})
 
 
 class PyOpenSSLBuildFactoryBase(BuildFactory):

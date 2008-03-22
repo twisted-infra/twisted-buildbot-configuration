@@ -232,6 +232,10 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         return self._platform
 
 
+    def python(self, version):
+        return "python" + version
+
+
     def binaryFilename(self, version):
         """
         Return the basename of the output of the I{bdist} command of
@@ -253,6 +257,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         if source:
             self.addStep(
                 shell.Compile,
+                # Doesn't matter what Python gets used for sdist
                 command=["python", "setup.py", "sdist"],
                 flunkOnFailure=True)
             self.addStep(
@@ -262,7 +267,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                     '.tar.gz'),
                 masterdest=self.uploadBase + 'pyOpenSSL-dev.tar.gz')
         for pyVersion in versions:
-            python = "python" + pyVersion
+            python = self.python(pyVersion)
             self.addStep(
                 shell.Compile,
                 command=[python, "setup.py", "bdist"],
@@ -334,9 +339,15 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Win32 PyOpenSSL package.
     """
-    def __init__(self, platform, compiler):
+    def python(self, pyVersion):
+        return (
+            "c:\\python%s\\python.exe" % (
+                pyVersion.replace('.', ''),))
+
+
+    def __init__(self, platform, compiler, pyVersion):
         PyOpenSSLBuildFactoryBase.__init__(self, [])
-        python = "python"
+        python = self.python(pyVersion)
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "build_ext", "--compiler", compiler],
@@ -348,20 +359,21 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             transfer.FileUpload,
             slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32.zip',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s.zip' % (platform,))
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.zip' % (platform, pyVersion))
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "bdist_wininst"],
             flunkOnFailure=True)
         self.addStep(
             transfer.FileUpload,
-            slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py2.5.exe',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py2.5.exe' % (platform,))
-        self.addStep(
-            shell.Compile,
-            command=[python, "setup.py", "bdist_msi"],
-            flunkOnFailure=True)
-        self.addStep(
-            transfer.FileUpload,
-            slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py2.5.msi',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py2.5.msi' % (platform,))
+            slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py' + pyVersion + '.exe',
+            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.exe' % (platform, pyVersion))
+        if pyVersion >= "2.5":
+            self.addStep(
+                shell.Compile,
+                command=[python, "setup.py", "bdist_msi"],
+                flunkOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py' + pyVersion + '.msi',
+                masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.msi' % (platform, pyVersion))

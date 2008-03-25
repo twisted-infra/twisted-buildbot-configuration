@@ -203,7 +203,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    currentPyOpenSSLVersion = "0.7a1"
+    currentPyOpenSSLVersion = "0.7a2"
 
     def __init__(self, versions):
         BuildFactory.__init__(self, [])

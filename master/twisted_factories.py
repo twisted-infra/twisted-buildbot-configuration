@@ -203,7 +203,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    currentPyOpenSSLVersion = "0.7a2"
+    currentPyOpenSSLVersion = "0.7"
 
     def __init__(self, versions):
         BuildFactory.__init__(self, [])
@@ -327,11 +327,9 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
 
     def platform(self, version):
         if version == "2.5":
-            return "macosx-10.3-ppc"
+            return "macosx-10.5-ppc"
         elif version == "2.4":
-            return "macosx-10.4-fat"
-        elif version == "2.3":
-            return "darwin-8.10.0-Power_Macintosh"
+            return "macosx-10.5-fat"
 
 
 

@@ -4,6 +4,7 @@ Build classes specific to the Twisted codebase
 
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
+from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import Bzr
@@ -18,12 +19,17 @@ FORCEGC_FLAGS = ["--force-gc"]
 
 class TwistedBuild(Build):
     workdir = "Twisted" # twisted's bin/trial expects to live in here
-    def isFileImportant(self, filename):
-        if filename.startswith("doc/fun/"):
-            return 0
-        if filename.startswith("sandbox/"):
-            return 0
-        return 1
+
+
+
+class TwistedScheduler(Scheduler):
+    def fileIsImportant(self, change):
+        for filename in change.files:
+            if not filename.startswith("doc/fun/"):
+                return 1
+        return 0
+
+
 
 class TwistedTrial(Trial):
     tests = "twisted"
@@ -42,12 +48,17 @@ class TwistedBaseFactory(BuildFactory):
 
     forceGarbageCollection = False
 
-    def __init__(self, source, uncleanWarnings):
+    def __init__(self, source, uncleanWarnings, trialMode=None):
         BuildFactory.__init__(self, [source])
         self.uncleanWarnings = uncleanWarnings
+        self.trialMode = trialMode
 
     def addTrialStep(self, **kw):
-        trialMode = TRIAL_FLAGS
+        if self.trialMode is not None:
+            trialMode = self.trialMode
+        else:
+            trialMode = TRIAL_FLAGS
+
         if self.uncleanWarnings:
             trialMode = trialMode + WARNING_FLAGS
         if self.forceGarbageCollection:
@@ -88,8 +99,8 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python",
                  runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
-                 uncleanWarnings=True):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
+                 uncleanWarnings=True, trialMode=None):
+        TwistedBaseFactory.__init__(self, source, uncleanWarnings, trialMode=trialMode)
 
         if type(python) == str:
             python = [python]

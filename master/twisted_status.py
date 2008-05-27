@@ -19,10 +19,14 @@ class TenBoxesPerBuilder(HtmlResource):
 
     title = "Latest Build"
 
+    def __init__(self, categories=None):
+        HtmlResource.__init__(self)
+        self.categories = categories
+
     def body(self, req):
         status = self.getStatus(req)
         
-        builders = req.args.get("builder", status.getBuilderNames())
+        builders = req.args.get("builder", status.getBuilderNames(categories=self.categories))
         branches = [b for b in req.args.get("branch", []) if b]
         num_builds = int(req.args.get("num_builds", ["10"])[0])
 

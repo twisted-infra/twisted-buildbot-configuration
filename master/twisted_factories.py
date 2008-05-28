@@ -191,10 +191,8 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
 
         setupCommands = [
-            ["rm", "install", "-rf"],
-            ["mkdir", "install"],
-            ["mkdir", "install/bin"],
-            ["mkdir", "install/lib"],
+            ["rm", "-rf", "install"],
+            ["mkdir", "-p", "install/bin", "install/lib"],
             [easy_install, "--install-dir", "install/lib",
                            "--script-dir", "install/bin",
                            "."],
@@ -202,7 +200,7 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
         for command in setupCommands:
             self.addStep(shell.ShellCommand, command=command,
                          env={"PYTHONPATH": "install/lib"},
-                         flunkOnFailure=True)
+                         haltOnFailure=True)
         self.addTrialStep(
             name=reactor, python=python,
             reactor=reactor, flunkOnFailure=True,

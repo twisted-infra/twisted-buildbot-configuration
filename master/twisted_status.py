@@ -5,8 +5,8 @@ from nevow import tags
 from nevow.url import URL
 from nevow.flat import flatten
 
-# /one_box_per_builder
-#  accepts builder=, branch=
+# /boxes[-things]
+#  accepts builder=, branch=, num_builds=
 class TenBoxesPerBuilder(HtmlResource):
     """This shows a narrow table with one row per build. The leftmost column
     contains the builder name. The next column contains the results of the
@@ -40,7 +40,9 @@ class TenBoxesPerBuilder(HtmlResource):
             builder = status.getBuilder(bn)
             row = tags.tr()
             table[row]
-            row[tags.td(class_="box")[bn]]
+            builderLink = URL.fromString(self.path_to_root(req) or "./")
+            builderLink = builderLink.child("builders").child(bn)
+            row[tags.td(class_="box")[tags.a(href=builderLink)[bn]]]
 
             current_box = ICurrentBox(builder).getBox(status)
             row[tags.xml(current_box.td(align="center"))]
@@ -49,10 +51,7 @@ class TenBoxesPerBuilder(HtmlResource):
                                                          num_builds=num_builds))
             if builds:
                 for b in builds:
-                    url = URL.fromString(self.path_to_root(req) or "./")
-                    url = url.child("builders")
-                    url = url.child(bn)
-                    url = url.child("builds")
+                    url = builderLink.child("builds")
                     url = url.child(b.getNumber())
                     try:
                         label = b.getProperty("got_revision")

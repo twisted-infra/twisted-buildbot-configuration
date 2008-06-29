@@ -7,11 +7,11 @@ from buildbot.process.factory import BuildFactory
 from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.source import Bzr
+from buildbot.steps.source import SVN, Bzr
 
 from twisted_steps import HLint, ProcessDocs, BuildDebs, \
     Trial, RemovePYCs, CheckDocumentation
-
+from pypy_steps import Translate
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
@@ -208,6 +208,40 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
             env={"PYTHONPATH": "lib"})
 
 
+
+class TwistedPyPyBuildFactory(BuildFactory):
+    PyTestStep = None
+
+    def __init__(self, translationArguments, targetArguments, *a, **kw):
+        BuildFactory.__init__(self, *a, **kw)
+
+        self.addStep(
+            SVN,
+            workdir="build/pypy-src",
+            baseURL="http://codespeak.net/svn/pypy/",
+            defaultBranch="dist",
+            mode="copy")
+        self.addStep(
+            Translate,
+            translationArgs=translationArguments,
+            targetArgs=targetArguments)
+        self.addStep(
+            SVN,
+            workdir="build/Twisted-src",
+            svnurl="svn://svn.twistedmatrix.com/svn/Twisted/trunk",
+            mode="copy")
+        self.addStep(
+            Trial,
+            workdir="build/pypy-src/pypy/translator/goal",
+            python=["pypy-c",
+                    "--oldstyle"],
+            testpath=None,
+            trial="../../../../Twisted-src/bin/trial",
+            tests=["twisted"],
+            env={"PATH": "."})
+
+
+
 class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
@@ -325,7 +359,8 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
         Return the path to the trial script in the framework.
         """
         if version == "2.5":
-            return "/Library/Frameworks/Python.framework/Versions/2.4/bin/trial" # OHWELL
+            # Neutron doesn't have this.
+            return "/Library/Frameworks/Python.framework/Versions/2.5/bin/trial"
         elif version == "2.4":
             return "/Library/Frameworks/Python.framework/Versions/2.4/bin/trial"
         elif version == "2.3":

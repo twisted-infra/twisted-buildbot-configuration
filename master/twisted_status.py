@@ -28,7 +28,11 @@ class TenBoxesPerBuilder(HtmlResource):
         
         builders = req.args.get("builder", status.getBuilderNames(categories=self.categories))
         branches = [b for b in req.args.get("branch", []) if b]
-        num_builds = int(req.args.get("num_builds", ["10"])[0])
+        if branches:
+            defaultCount = "1"
+        else:
+            defaultCount = "10"
+        num_builds = int(req.args.get("num_builds", [defaultCount])[0])
 
         tag = tags.div()
         tag[tags.h2["Latest builds: ", ", ".join(branches)]]

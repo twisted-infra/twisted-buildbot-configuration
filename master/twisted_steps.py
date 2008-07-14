@@ -659,31 +659,41 @@ class Trial(ShellCommand):
 
     
 class ProcessDocs(ShellCommand):
-    """I build all docs. This requires some LaTeX packages to be installed.
-    It will result in the full documentation book (dvi, pdf, etc).
-    
+    """
+    I build all docs. This requires some LaTeX packages to be
+    installed. It will result in the full documentation book (dvi,
+    pdf, etc).
     """
 
     name = "process-docs"
     warnOnWarnings = 1
-    command = ["admin/process-docs"]
+    command = [
+        "python", "-c",
+        "from twisted.python import _release as r\n"
+        "from twisted.python.filepath import FilePath\n"
+        "done = {}\n"
+        "for p in FilePath('doc').walk():\n"
+        "    if p.basename() == 'man':\n"
+        "        print 'processing manual pages:', p.path\n"
+        "        done[p] = True\n"
+        "        r.ManBuilder().build(p)\n"
+        "for p in FilePath('doc').walk():\n"
+        "    if p.basename().endswith('.xhtml'):\n"
+        "        if p.parent() not in done:\n"
+        "            print 'processing howto pages:', p.parent().path\n"
+        "            done[p.parent()] = True\n"
+        "            r.DocBuilder().build(\n"
+        "                'dev', FilePath('doc/core/howto'), p.parent(),\n"
+        "                FilePath('doc/core/howto/template.tpl'))\n"
+        "print 'building book:'\n"
+        "for p in done:\n"
+        "    print '\t', p.path\n"
+        "r.BookBuilder().build(FilePath('doc/core/howto'), done.keys(),\n"
+        "                      FilePath('doc/core/howto/book.tex'),\n"
+        "                      FilePath('book.pdf'))\n"]
     description = ["processing", "docs"]
     descriptionDone = ["docs"]
     # TODO: track output and time
-
-    def __init__(self, **kwargs):
-        """
-        @type    workdir: string
-        @keyword workdir: the workdir to start from: must be the base of the
-                          Twisted tree
-
-        @type    results: triple of (int, int, string)
-        @keyword results: [rc, warnings, output]
-                          - rc==0 if all files were converted successfully.
-                          - warnings is a count of hlint warnings. 
-                          - output is the verbose output of the command.
-        """
-        ShellCommand.__init__(self, **kwargs)
 
     def createSummary(self, log):
         output = log.getText()

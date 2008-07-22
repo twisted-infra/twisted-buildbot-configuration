@@ -209,9 +209,7 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
 
 
-class TwistedPyPyBuildFactory(BuildFactory):
-    PyTestStep = None
-
+class PyPyTranslationFactory(BuildFactory):
     def __init__(self, translationArguments, targetArguments, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
 
@@ -225,6 +223,12 @@ class TwistedPyPyBuildFactory(BuildFactory):
             Translate,
             translationArgs=translationArguments,
             targetArgs=targetArguments)
+
+
+
+class TwistedPyPyBuildFactory(BuildFactory):
+    def __init__(self, *a, **kw):
+        BuildFactory.__init__(self, *a, **kw)
         self.addStep(
             SVN,
             workdir="build/Twisted-src",
@@ -233,12 +237,11 @@ class TwistedPyPyBuildFactory(BuildFactory):
         self.addStep(
             Trial,
             workdir="build/pypy-src/pypy/translator/goal",
-            python=["pypy-c",
-                    "--oldstyle"],
+            python=["pypy-c"],
             testpath=None,
             trial="../../../../Twisted-src/bin/trial",
             tests=["twisted"],
-            env={"PATH": "."})
+            env={"PATH": "/usr/bin:."})
 
 
 

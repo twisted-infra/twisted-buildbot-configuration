@@ -251,7 +251,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     currentPyOpenSSLVersion = "0.7"
 
-    def __init__(self, versions):
+    def __init__(self):
         BuildFactory.__init__(self, [])
         self.uploadBase = 'public_html/builds/'
         self.addStep(
@@ -266,6 +266,43 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Linux (or Linux-like) PyOpenSSL package.
     """
+    def __init__(self, versions, source, platform=None, bdistEnv=None):
+        PyOpenSSLBuildFactoryBase.__init__(self)
+        self._platform = platform
+        self.bdistEnv = bdistEnv
+        if source:
+            self.addStep(
+                shell.Compile,
+                # Doesn't matter what Python gets used for sdist
+                command=["python", "setup.py", "sdist"],
+                flunkOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc=(
+                    'dist/pyOpenSSL-' + self.currentPyOpenSSLVersion +
+                    '.tar.gz'),
+                masterdest=self.uploadBase + 'pyOpenSSL-dev.tar.gz')
+        for pyVersion in versions:
+            python = self.python(pyVersion)
+            self.addStep(
+                shell.Compile,
+                command=[python, "setup.py", "bdist"],
+                env=self.bdistEnv,
+                flunkOnFailure=True)
+            self.addStep(
+                Trial,
+                workdir="build/build/lib.%s-%s" % (self.platform(pyVersion), pyVersion),
+                python=python,
+                trial=self.trial(pyVersion),
+                tests="OpenSSL",
+                testpath=None)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc='dist/' + self.binaryFilename(pyVersion),
+                masterdest=(self.uploadBase + '/' +
+                            self.binaryUploadFilename(pyVersion)))
+
+
     def trial(self, version):
         """
         Return the path to the trial script for the given version of
@@ -297,48 +334,13 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             version, self.platform(version))
 
 
-    def __init__(self, versions, source, platform=None):
-        PyOpenSSLBuildFactoryBase.__init__(self, [])
-        self._platform = platform
-        if source:
-            self.addStep(
-                shell.Compile,
-                # Doesn't matter what Python gets used for sdist
-                command=["python", "setup.py", "sdist"],
-                flunkOnFailure=True)
-            self.addStep(
-                transfer.FileUpload,
-                slavesrc=(
-                    'dist/pyOpenSSL-' + self.currentPyOpenSSLVersion +
-                    '.tar.gz'),
-                masterdest=self.uploadBase + 'pyOpenSSL-dev.tar.gz')
-        for pyVersion in versions:
-            python = self.python(pyVersion)
-            self.addStep(
-                shell.Compile,
-                command=[python, "setup.py", "bdist"],
-                flunkOnFailure=True)
-            self.addStep(
-                Trial,
-                workdir="build/build/lib.%s-%s" % (self.platform(pyVersion), pyVersion),
-                python=python,
-                trial=self.trial(pyVersion),
-                tests="OpenSSL",
-                testpath=None)
-            self.addStep(
-                transfer.FileUpload,
-                slavesrc='dist/' + self.binaryFilename(pyVersion),
-                masterdest=(self.uploadBase + '/' +
-                            self.binaryUploadFilename(pyVersion)))
-
-
 
 class DebianPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
     """
     Build and test a Debian (or Debian-derivative) PyOpenSSL package.
     """
-    def __init__(self, versions, source, platform, distro, packageFiles):
-        LinuxPyOpenSSLBuildFactory.__init__(self, versions, source, platform)
+    def __init__(self, versions, source, platform, distro, packageFiles, **kw):
+        LinuxPyOpenSSLBuildFactory.__init__(self, versions, source, platform, **kw)
         self.addStep(
             shell.ShellCommand,
             command=["cp", "-a", distro, "debian"])
@@ -357,23 +359,23 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
     """
     Build and test an OS-X PyOpenSSL package.
     """
+    def __init__(self, versions, osxVersion, **kw):
+        self.osxVersion = osxVersion
+        LinuxPyOpenSSLBuildFactory.__init__(self, versions, **kw)
+
+
     def trial(self, version):
         """
         Return the path to the trial script in the framework.
         """
-        if version == "2.5":
-            # Neutron doesn't have this.
-            return "/Library/Frameworks/Python.framework/Versions/2.5/bin/trial"
-        elif version == "2.4":
-            return "/Library/Frameworks/Python.framework/Versions/2.4/bin/trial"
-        elif version == "2.3":
-            return "/System/Library/Frameworks/Python.framework/Versions/2.3/bin/trial"
-        else:
-            raise ValueError("Unknown Python version")
+        return "/usr/local/bin/trial"
 
 
     def platform(self, version):
-        if version == "2.5":
+        if self.osxVersion == "10.4":
+            # OS X, you are a hilarious trainwreck of stupidity.
+            return "macosx-10.3-i386"
+        elif version == "2.5":
             return "macosx-10.5-ppc"
         elif version == "2.4":
             return "macosx-10.5-fat"
@@ -391,7 +393,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
 
     def __init__(self, platform, compiler, pyVersion):
-        PyOpenSSLBuildFactoryBase.__init__(self, [])
+        PyOpenSSLBuildFactoryBase.__init__(self)
         python = self.python(pyVersion)
         self.addStep(
             shell.Compile,

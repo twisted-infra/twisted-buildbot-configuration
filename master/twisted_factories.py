@@ -232,7 +232,8 @@ class TwistedPyPyBuildFactory(BuildFactory):
         self.addStep(
             SVN,
             workdir="build/Twisted-src",
-            svnurl="svn://svn.twistedmatrix.com/svn/Twisted/trunk",
+            baseURL="svn://svn.twistedmatrix.com/svn/Twisted/",
+            defaultBranch="trunk",
             mode="copy")
         self.addStep(
             Trial,

@@ -813,9 +813,9 @@ class BuildDebs(ShellCommand):
 
 class RemovePYCs(ShellCommand):
     name = "remove-.pyc"
-    command = 'find . -name "*.pyc" | xargs rm'
-    description = ["removing", ".pyc", "files"]
-    descriptionDone = ["remove", ".pycs"]
+    command = 'find . -name "*.pyc" -or -name "*$py.class" | xargs rm -f'
+    description = ["removing", "bytecode", "files"]
+    descriptionDone = ["remove", "bytecode"]
 
 
 class CheckDocumentation(ShellCommand):

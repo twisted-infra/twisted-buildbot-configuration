@@ -2,6 +2,7 @@
 Build classes specific to the Twisted codebase
 """
 
+from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
 from buildbot.scheduler import Scheduler
@@ -10,7 +11,7 @@ from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
 
 from twisted_steps import HLint, ProcessDocs, BuildDebs, \
-    Trial, RemovePYCs, CheckDocumentation
+    Trial, RemovePYCs, CheckDocumentation, LearnVersion
 from pypy_steps import Translate
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
@@ -250,8 +251,6 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    currentPyOpenSSLVersion = "0.7"
-
     def __init__(self):
         BuildFactory.__init__(self, [])
         self.uploadBase = 'public_html/builds/'
@@ -260,6 +259,9 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
              baseURL="http://bazaar.launchpad.net/~exarkun/pyopenssl/",
              defaultBranch="trunk",
              mode="copy")
+        self.addStep(
+            LearnVersion, python=self.python("2.5"), package='version',
+            workdir='source')
 
 
 
@@ -279,12 +281,11 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 flunkOnFailure=True)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc=(
-                    'dist/pyOpenSSL-' + self.currentPyOpenSSLVersion +
-                    '.tar.gz'),
-                masterdest=self.uploadBase + 'pyOpenSSL-dev.tar.gz')
+                slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.tar.gz'),
+                masterdest=WithProperties(self.uploadBase + 'pyOpenSSL-%(version)s.tar.gz'))
         for pyVersion in versions:
             python = self.python(pyVersion)
+            platform = self.platform(pyVersion)
             self.addStep(
                 shell.Compile,
                 command=[python, "setup.py", "bdist"],
@@ -292,16 +293,19 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 flunkOnFailure=True)
             self.addStep(
                 Trial,
-                workdir="build/build/lib.%s-%s" % (self.platform(pyVersion), pyVersion),
+                workdir="build/build/lib.%s-%s" % (platform, pyVersion),
                 python=python,
                 trial=self.trial(pyVersion),
                 tests="OpenSSL",
                 testpath=None)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc='dist/' + self.binaryFilename(pyVersion),
-                masterdest=(self.uploadBase + '/' +
-                            self.binaryUploadFilename(pyVersion)))
+                # This is the name of the file "setup.py bdist" writes.
+                slavesrc=WithProperties(
+                    'dist/pyOpenSSL-%(version)s.' + platform + '.tar.gz'),
+                masterdest=WithProperties(
+                    self.uploadBase + '/pyOpenSSL-%(version)s.py' +
+                    pyVersion + '.' + platform + '.tar.gz'))
 
 
     def trial(self, version):
@@ -318,21 +322,6 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
     def python(self, version):
         return "python" + version
-
-
-    def binaryFilename(self, version):
-        """
-        Return the basename of the output of the I{bdist} command of
-        distutils for the given version of Python.
-        """
-        return (
-            'pyOpenSSL-' + self.currentPyOpenSSLVersion + '.' +
-            self.platform(version) + '.tar.gz')
-
-
-    def binaryUploadFilename(self, version):
-        return 'pyOpenSSL-dev.py%s.%s.tar.gz' % (
-            version, self.platform(version))
 
 
 
@@ -406,16 +395,18 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             flunkOnFailure=True)
         self.addStep(
             transfer.FileUpload,
-            slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32.zip',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.zip' % (platform, pyVersion))
+            slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32.zip'),
+            masterdest=WithProperties(
+                self.uploadBase + 'pyOpenSSL-%(version)s.' + platform + '-py' + pyVersion + '.zip'))
         self.addStep(
             shell.Compile,
             command=[python, "setup.py", "bdist_wininst"],
             flunkOnFailure=True)
         self.addStep(
             transfer.FileUpload,
-            slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py' + pyVersion + '.exe',
-            masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.exe' % (platform, pyVersion))
+            slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.exe'),
+            masterdest=WithProperties(
+                self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
         if pyVersion >= "2.5":
             self.addStep(
                 shell.Compile,
@@ -423,5 +414,6 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 flunkOnFailure=True)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc='dist/pyOpenSSL-' + self.currentPyOpenSSLVersion + '.win32-py' + pyVersion + '.msi',
-                masterdest=self.uploadBase + 'pyOpenSSL-dev.%s-py%s.msi' % (platform, pyVersion))
+                slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.msi'),
+                masterdest=WithProperties(
+                    self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))

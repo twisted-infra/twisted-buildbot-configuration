@@ -6,7 +6,7 @@ from buildbot.status import tests, builder
 from buildbot.status.builder import SUCCESS, FAILURE, WARNINGS, SKIPPED
 from buildbot.process.buildstep import LogLineObserver, OutputProgressObserver
 from buildbot.process.buildstep import RemoteShellCommand
-from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import ShellCommand, SetProperty
 
 try:
     import cStringIO
@@ -833,3 +833,19 @@ class CheckDocumentation(ShellCommand):
         '--add-package `pwd`/twisted')
     description = ["checking", "api", "docs"]
     descriptionDone = ["api", "docs"]
+
+
+class LearnVersion(SetProperty):
+    """
+    Import a package and set a version property based on its version.
+    """
+    src = (
+        # Do not use multiple lines.  Windows cannot deal with it.
+        'from %(package)s import __version__; '
+        'print __version__; ')
+
+    def __init__(self, python, package, **kw):
+        SetProperty.__init__(
+            self,
+            command=[python, '-c', self.src % dict(package=package)],
+            property="version", **kw)

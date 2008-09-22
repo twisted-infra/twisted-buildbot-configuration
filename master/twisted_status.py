@@ -61,7 +61,9 @@ class TenBoxesPerBuilder(HtmlResource):
                         label = b.getProperty("got_revision")
                     except KeyError:
                         label = None
-                    if not label or len(str(label)) > 20:
+                    # Label should never be "None", but sometimes
+                    # buildbot has disgusting bugs.
+                    if not label or label == "None" or len(str(label)) > 20:
                         label = "#%d" % b.getNumber()
                     row[
                         tags.td(align="center", bgcolor=b.getColor(),

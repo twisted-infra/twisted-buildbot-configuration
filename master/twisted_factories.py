@@ -218,7 +218,7 @@ class PyPyTranslationFactory(BuildFactory):
             SVN,
             workdir="build/pypy-src",
             baseURL="http://codespeak.net/svn/pypy/",
-            defaultBranch="dist",
+            defaultBranch="trunk",
             mode="copy")
         self.addStep(
             Translate,

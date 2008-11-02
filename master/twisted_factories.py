@@ -243,7 +243,9 @@ class TwistedPyPyBuildFactory(BuildFactory):
             testpath=None,
             trial="../../../../Twisted-src/bin/trial",
             tests=["twisted"],
-            env={"PATH": "/usr/bin:."})
+            env={"PATH": "/usr/bin:.",
+                 # PyPy doesn't currently find this on its own.
+                 "PYTHONPATH": "/usr/lib/python2.5/site-packages"})
 
 
 

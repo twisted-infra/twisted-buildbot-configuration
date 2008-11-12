@@ -91,6 +91,15 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
         TwistedBaseFactory.__init__(self, source, False)
         self.addStep(CheckDocumentation)
         self.addStep(ProcessDocs)
+        self.addStep(
+            shell.ShellCommand,
+            command=['/bin/tar', 'cjf', 'apidocs.tar.bz2', 'apidocs'])
+        self.addStep(
+            transfer.FileUpload,
+            workdir='.',
+            slavesrc='./Twisted/apidocs.tar.bz2',
+            masterdest=WithProperties(
+                'public_html/builds/apidocs-%(got_revision)s.tar.bz2'))
 
 
 

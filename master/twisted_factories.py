@@ -148,7 +148,8 @@ class GoodTwistedBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python",
                  processDocs=False, runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
-                 uncleanWarnings=True):
+                 uncleanWarnings=True,
+                 extraTrialArguments={}):
         TwistedBaseFactory.__init__(self, source, uncleanWarnings)
         if processDocs:
             self.addStep(ProcessDocs)
@@ -162,7 +163,8 @@ class GoodTwistedBuildFactory(TwistedBaseFactory):
 
         self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
         self.addStep(RemovePYCs)
-        self.addTrialStep(python=python, randomly=runTestsRandomly)
+        self.addTrialStep(
+            python=python, randomly=runTestsRandomly, **extraTrialArguments)
 
 
 class TwistedReactorsBuildFactory(TwistedBaseFactory):

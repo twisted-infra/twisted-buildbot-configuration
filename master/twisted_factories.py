@@ -395,12 +395,16 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 pyVersion.replace('.', ''),))
 
 
-    def __init__(self, platform, compiler, pyVersion):
+    def __init__(self, platform, compiler, pyVersion, extraInclude=None):
         PyOpenSSLBuildFactoryBase.__init__(self)
         python = self.python(pyVersion)
+        buildCommand = [
+            python, "setup.py", "build_ext", "--compiler", compiler]
+        if extraInclude is not None:
+            buildCommand.extend(["-I", extraInclude])
         self.addStep(
             shell.Compile,
-            command=[python, "setup.py", "build_ext", "--compiler", compiler],
+            command=buildCommand,
             flunkOnFailure=True)
         self.addStep(
             shell.Compile,

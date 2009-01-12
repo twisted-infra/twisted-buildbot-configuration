@@ -434,3 +434,8 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.msi'),
                 masterdest=WithProperties(
                     self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
+
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "bdist_egg"],
+            flunkOnFailure=True)

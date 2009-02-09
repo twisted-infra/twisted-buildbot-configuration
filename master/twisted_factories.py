@@ -437,5 +437,10 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
         self.addStep(
             shell.Compile,
-            command=[python, "setup.py", "bdist_egg"],
+            command=[python, "-c", "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py')", "bdist_egg"],
             flunkOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc=WithProperties('dist/pyOpenSSL-%(version)s-py' + pyVersion + '-win32.egg'),
+            masterdest=WithProperties(
+                self.uploadBase + 'pyOpenSSL-%%(version)s.py%s-%s.egg' % (pyVersion, platform)))

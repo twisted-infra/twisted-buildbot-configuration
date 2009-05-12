@@ -10,7 +10,7 @@ from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
 
-from twisted_steps import HLint, ProcessDocs, BuildDebs, \
+from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, CheckDocumentation, LearnVersion
 from pypy_steps import Translate
 
@@ -42,6 +42,10 @@ class TwistedTrial(Trial):
     trial = "./bin/trial"
 
 class TwistedBaseFactory(BuildFactory):
+    """
+    @ivar python: The path to the Python executable to use.  This is a
+        list, to allow additional arguments to be passed.
+    """
     buildClass = TwistedBuild
     # bin/trial expects its parent directory to be named "Twisted": it uses
     # this to add the local tree to PYTHONPATH during tests
@@ -49,10 +53,28 @@ class TwistedBaseFactory(BuildFactory):
 
     forceGarbageCollection = False
 
-    def __init__(self, source, uncleanWarnings, trialMode=None):
+    def __init__(self, python, source, uncleanWarnings, trialMode=None):
         BuildFactory.__init__(self, [source])
+
+        if type(python) is str:
+            python = [python]
+
+        self.python = python
         self.uncleanWarnings = uncleanWarnings
         self.trialMode = trialMode
+
+        self.addStep(
+            ReportPythonModuleVersions, 
+            python=self.python,
+            moduleInfo=[("OpenSSL", "OpenSSL.__version__"),
+                        ("Crypto", "Crypto.__version__"),
+                        ("gmpy", "gmpy.version()"),
+                        ("ctypes", "ctypes.__version__"),
+                        ("gtk", "gtk.gtk_version"),
+                        ("gtk", "gtk.pygtk_version"),
+                        ("win32api", 
+                         "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16")])
+
 
     def addTrialStep(self, **kw):
         if self.trialMode is not None:
@@ -64,31 +86,14 @@ class TwistedBaseFactory(BuildFactory):
             trialMode = trialMode + WARNING_FLAGS
         if self.forceGarbageCollection:
             trialMode = trialMode + FORCEGC_FLAGS
-        self.addStep(TwistedTrial, trialMode=trialMode, **kw)
-
-
-class QuickTwistedBuildFactory(TwistedBaseFactory):
-    treeStableTimer = 30
-    useProgress = 0
-
-    def __init__(self, source, python="python", uncleanWarnings=True):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
-        if type(python) is str:
-            python = [python]
-        self.addStep(HLint, python=python[0])
-        self.addStep(RemovePYCs)
-        for p in python:
-            cmd = [p, "setup.py", "build_ext", "-i"]
-            self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
-            self.addTrialStep(python=p, testChanges=True)
-
+        self.addStep(TwistedTrial, python=self.python, trialMode=trialMode, **kw)
 
 
 class TwistedDocumentationBuildFactory(TwistedBaseFactory):
     treeStableTimer = 5 * 60
 
     def __init__(self, source, python="python"):
-        TwistedBaseFactory.__init__(self, source, False)
+        TwistedBaseFactory.__init__(self, python, source, False)
         self.addStep(CheckDocumentation)
         self.addStep(ProcessDocs)
         self.addStep(
@@ -110,10 +115,8 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
                  runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
                  uncleanWarnings=True, trialMode=None):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings, trialMode=trialMode)
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings, trialMode=trialMode)
 
-        if type(python) == str:
-            python = [python]
         assert isinstance(compileOpts, list)
         assert isinstance(compileOpts2, list)
         cmd = (python + compileOpts + ["setup.py", "build_ext"]
@@ -121,16 +124,7 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
 
         self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
         self.addStep(RemovePYCs)
-        self.addTrialStep(python=python, randomly=runTestsRandomly)
-
-
-class TwistedDebsBuildFactory(TwistedBaseFactory):
-    treeStableTimer = 10*60
-
-    def __init__(self, source, python="python"):
-        TwistedBaseFactory.__init__(self, source)
-        self.addStep(ProcessDocs, haltOnFailure=True)
-        self.addStep(BuildDebs, warnOnWarnings=True)
+        self.addTrialStep(randomly=runTestsRandomly)
 
 
 class Win32RemovePYCs(ShellCommand):
@@ -150,21 +144,18 @@ class GoodTwistedBuildFactory(TwistedBaseFactory):
                  compileOpts=[], compileOpts2=[],
                  uncleanWarnings=True,
                  extraTrialArguments={}):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
         if processDocs:
             self.addStep(ProcessDocs)
 
-        if type(python) == str:
-            python = [python]
         assert isinstance(compileOpts, list)
         assert isinstance(compileOpts2, list)
-        cmd = (python + compileOpts + ["setup.py", "build_ext"]
+        cmd = (self.python + compileOpts + ["setup.py", "build_ext"]
                + compileOpts2 + ["-i"])
 
         self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
         self.addStep(RemovePYCs)
-        self.addTrialStep(
-            python=python, randomly=runTestsRandomly, **extraTrialArguments)
+        self.addTrialStep(randomly=runTestsRandomly, **extraTrialArguments)
 
 
 class TwistedReactorsBuildFactory(TwistedBaseFactory):
@@ -173,13 +164,11 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
     def __init__(self, source, RemovePYCs=RemovePYCs,
                  python="python", compileOpts=[], compileOpts2=[],
                  reactors=["select"], uncleanWarnings=True):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
 
-        if type(python) == str:
-            python = [python]
         assert isinstance(compileOpts, list)
         assert isinstance(compileOpts2, list)
-        cmd = (python + compileOpts + ["setup.py", "build_ext"]
+        cmd = (self.python + compileOpts + ["setup.py", "build_ext"]
                + compileOpts2 + ["-i"])
 
         self.addStep(shell.Compile, command=cmd, warnOnFailure=True)
@@ -187,8 +176,7 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
         for reactor in reactors:
             self.addStep(RemovePYCs)
             self.addTrialStep(
-                name=reactor, python=python,
-                reactor=reactor, flunkOnFailure=True,
+                name=reactor, reactor=reactor, flunkOnFailure=True,
                 warnOnFailure=False)
 
 
@@ -197,10 +185,7 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
     def __init__(self, source, uncleanWarnings, python="python",
                  reactor="epoll", easy_install="easy_install"):
-        TwistedBaseFactory.__init__(self, source, uncleanWarnings)
-        if type(python) == str:
-            python = [python]
-
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
 
         setupCommands = [
             ["rm", "-rf", "install"],
@@ -214,7 +199,7 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
                          env={"PYTHONPATH": "install/lib"},
                          haltOnFailure=True)
         self.addTrialStep(
-            name=reactor, python=python,
+            name=reactor,
             reactor=reactor, flunkOnFailure=True,
             warnOnFailure=False, workdir="Twisted/install",
             env={"PYTHONPATH": "lib"})

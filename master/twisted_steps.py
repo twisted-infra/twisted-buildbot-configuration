@@ -2,7 +2,7 @@
 
 from twisted.python import log
 
-from buildbot.status import tests, builder
+from buildbot.status import builder
 from buildbot.status.builder import SUCCESS, FAILURE, WARNINGS, SKIPPED
 from buildbot.process.buildstep import LogLineObserver, OutputProgressObserver
 from buildbot.process.buildstep import RemoteShellCommand
@@ -739,6 +739,52 @@ class ProcessDocs(ShellCommand):
                                  self.warnings == 1 and 'c' or 'cs')]
         return ["docs"]
 
+
+
+class ReportPythonModuleVersions(ShellCommand):
+    """
+    Load a number of Python modules and report their version information.
+
+    @ivar _moduleInfo: A list of two-tuples.  The first element of
+        each tuple is a string giving the FQPN of a module to import
+        to load version information from.  The second element of each
+        tuple is a string giving the FQPN of an object giving a
+        version.  Importing the first element must be all that is
+        necessary to make the second element accessible.
+    """
+    def __init__(self, python, moduleInfo, **kwargs):
+        ShellCommand.__init__(self, **kwargs)
+        self._python = python
+        self._moduleInfo = moduleInfo
+
+
+    def _formatSource(self, moduleInfo):
+        template = (
+            "try:\n"
+            "    import %(module)s\n"
+            "except Exception, e:\n"
+            "    print 'missing %(module)s', str(e)\n"
+            "else:\n"
+            "    print 'found %(module)s', %(version)s\n")
+        return "\n".join([template % dict(module=module, version=version)
+                          for (module, version)
+                          in moduleInfo])
+
+
+    def start(self):
+        command = self._python +["-c", self._formatSource(self._moduleInfo)]
+        self.setCommand(command)
+        ShellCommand.start(self)
+
+
+    def commandComplete(self, cmd):
+        self.addCompleteLog("versions", cmd.logs['stdio'].getText())
+
+
+    def evaluateCommand(self, cmd):
+        if cmd.rc != 0:
+            return FAILURE
+        return SUCCESS
 
     
 class BuildDebs(ShellCommand):

@@ -760,15 +760,18 @@ class ReportPythonModuleVersions(ShellCommand):
 
     def _formatSource(self, moduleInfo):
         template = (
-            "try:\n"
-            "    import %(module)s\n"
-            "except Exception, e:\n"
-            "    print 'missing %(module)s', str(e)\n"
-            "else:\n"
-            "    print 'found %(module)s', %(version)s\n")
-        return "\n".join([template % dict(module=module, version=version)
-                          for (module, version)
-                          in moduleInfo])
+            'try: import %(module)s\n'
+            'except Exception, e: print "missing %(module)s", str(e)\n'
+            'else: print "found %(module)s", %(version)s\n')
+        checks = '\n'.join([
+            template % dict(module=module, version=version)
+            for (module, version)
+            in moduleInfo])
+
+        # Cannot have newlines in this code, or it isn't compatible on
+        # both POSIX and Windows.  Also, quotes make things really
+        # confusing, so don't have any literal quotes.
+        return 'exec "%s".decode("hex")' % (checks.encode('hex'),)
 
 
     def start(self):

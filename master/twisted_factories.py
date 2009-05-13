@@ -69,6 +69,7 @@ class TwistedBaseFactory(BuildFactory):
             moduleInfo=[("OpenSSL", "OpenSSL.__version__"),
                         ("Crypto", "Crypto.__version__"),
                         ("gmpy", "gmpy.version()"),
+                        ("SOAPpy", "SOAPpy.__version__"),
                         ("ctypes", "ctypes.__version__"),
                         ("gtk", "gtk.gtk_version"),
                         ("gtk", "gtk.pygtk_version"),

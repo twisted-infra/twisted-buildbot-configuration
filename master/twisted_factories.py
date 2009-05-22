@@ -427,8 +427,9 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             shell.Compile,
             command=[python, "-c", "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py')", "bdist_egg"],
             flunkOnFailure=True)
+
+        eggName = 'pyOpenSSL-%(version)s-py' + pyVersion + '-win32.egg'
         self.addStep(
             transfer.FileUpload,
-            slavesrc=WithProperties('dist/pyOpenSSL-%(version)s-py' + pyVersion + '-win32.egg'),
-            masterdest=WithProperties(
-                self.uploadBase + 'pyOpenSSL-%%(version)s.py%s-%s.egg' % (pyVersion, platform)))
+            slavesrc=WithProperties('dist/' + eggName),
+            masterdest=WithProperties(self.uploadBase + eggName))

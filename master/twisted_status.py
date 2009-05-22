@@ -1,9 +1,18 @@
 
 from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class
+from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION
 
 from nevow import tags
 from nevow.url import URL
 from nevow.flat import flatten
+
+_backgroundColors = {
+    SUCCESS: "green",
+    WARNINGS: "orange",
+    FAILURE: "red",
+    SKIPPED: "blue",
+    EXCEPTION: "purple",
+    }
 
 # /boxes[-things]
 #  accepts builder=, branch=, num_builds=
@@ -66,11 +75,13 @@ class TenBoxesPerBuilder(HtmlResource):
                     if not label or label == "None" or len(str(label)) > 20:
                         label = "#%d" % b.getNumber()
                     row[
-                        tags.td(align="center", bgcolor=b.getColor(),
-                           class_=("LastBuild box ", build_get_class(b)))[[
-                            (element, tags.br)
-                            for element
-                            in [tags.a(href=url)[label]] + b.getText()]]]
+                        tags.td(
+                            align="center",
+                            bgcolor=_backgroundColors[b.getResults()],
+                            class_=("LastBuild box ", build_get_class(b)))[[
+                                (element, tags.br)
+                                for element
+                                in [tags.a(href=url)[label]] + b.getText()]]]
             else:
                 row[tags.td(class_="LastBuild box")["no build"]]
         return flatten(tag)

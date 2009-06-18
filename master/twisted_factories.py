@@ -115,15 +115,18 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python",
                  runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
-                 uncleanWarnings=True, trialMode=None):
+                 uncleanWarnings=True, trialMode=None,
+                 buildExtensions=True):
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings, trialMode=trialMode)
 
         assert isinstance(compileOpts, list)
         assert isinstance(compileOpts2, list)
-        cmd = (python + compileOpts + ["setup.py", "build_ext"]
-               + compileOpts2 + ["-i"])
 
-        self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
+        if buildExtensions:
+            cmd = (python + compileOpts + ["setup.py", "build_ext"]
+                   + compileOpts2 + ["-i"])
+            self.addStep(shell.Compile, command=cmd, flunkOnFailure=True)
+
         self.addStep(RemovePYCs)
         self.addTrialStep(randomly=runTestsRandomly)
 
@@ -244,6 +247,11 @@ class TwistedPyPyBuildFactory(BuildFactory):
                  # PyPy doesn't currently find this on its own.
                  "PYTHONPATH": "/usr/lib/python2.5/site-packages"})
 
+
+class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):
+    def __init__(self, source, *a, **kw):
+        FullTwistedBuildFactory.__init__(
+            self, source, ["ipy"], buildExtensions=False, *a, **kw)
 
 
 class PyOpenSSLBuildFactoryBase(BuildFactory):

@@ -74,7 +74,8 @@ class TwistedBaseFactory(BuildFactory):
                         ("gtk", "gtk.gtk_version"),
                         ("gtk", "gtk.pygtk_version"),
                         ("win32api", 
-                         "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16")])
+                         "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
+                        ("pyasn1", "pyasn1.majorVersionId")])
 
 
     def addTrialStep(self, **kw):

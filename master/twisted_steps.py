@@ -762,7 +762,7 @@ class ReportPythonModuleVersions(ShellCommand):
         template = (
             'try: import %(module)s\n'
             'except Exception, e: print "missing %(module)s", str(e)\n'
-            'else: print "found %(module)s", %(version)s\n')
+            'else: print "found %(module)s, %(version)s =", %(version)s\n')
         checks = '\n'.join([
             template % dict(module=module, version=version)
             for (module, version)

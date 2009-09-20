@@ -272,6 +272,17 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
             workdir='source')
 
 
+    def addTestStep(self, pyVersion):
+        self.addStep(
+            Trial,
+            workdir="build/build/lib.%s-%s" % (
+                self.platform(pyVersion), pyVersion),
+            python=self.python(pyVersion),
+            trial=self.trial(pyVersion),
+            tests="OpenSSL",
+            testpath=None)
+
+
 
 class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
@@ -299,13 +310,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 command=[python, "setup.py", "bdist"],
                 env=self.bdistEnv,
                 flunkOnFailure=True)
-            self.addStep(
-                Trial,
-                workdir="build/build/lib.%s-%s" % (platform, pyVersion),
-                python=python,
-                trial=self.trial(pyVersion),
-                tests="OpenSSL",
-                testpath=None)
+            self.addTestStep(pyVersion)
             self.addStep(
                 transfer.FileUpload,
                 # This is the name of the file "setup.py bdist" writes.
@@ -390,6 +395,14 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 pyVersion.replace('.', ''),))
 
 
+    def addTestStep(self, pyVersion):
+        self.addStep(
+            ShellCommand,
+            workdir="build/build/lib.%s-%s/" % (
+                self.platform(pyVersion), pyVersion),
+            command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL\\test\\"])
+
+
     def __init__(self, platform, compiler, pyVersion, extraInclude=None, extraLib=None):
         PyOpenSSLBuildFactoryBase.__init__(self)
         python = self.python(pyVersion)
@@ -407,6 +420,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             shell.Compile,
             command=[python, "setup.py", "bdist"],
             flunkOnFailure=True)
+        self.addTestStep(pyVersion)
         self.addStep(
             transfer.FileUpload,
             slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32.zip'),
@@ -434,7 +448,9 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
         self.addStep(
             shell.Compile,
-            command=[python, "-c", "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py')", "bdist_egg"],
+            command=[python, "-c", 
+                     "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py', {'__file__': 'setup.py'})",
+                     "bdist_egg"],
             flunkOnFailure=True)
 
         eggName = 'pyOpenSSL-%(version)s-py' + pyVersion + '-win32.egg'
@@ -442,3 +458,11 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             transfer.FileUpload,
             slavesrc=WithProperties('dist/' + eggName),
             masterdest=WithProperties(self.uploadBase + eggName))
+
+
+    def platform(self, pyVersion):
+        return "win32"
+
+
+    def trial(self, pyVersion):
+        return "c:\\python%s\\scripts\\trial" % (pyVersion.replace('.', ''),)

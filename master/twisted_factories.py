@@ -9,6 +9,7 @@ from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
+from buildbot.steps.python import PyFlakes
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, CheckDocumentation, LearnVersion
@@ -89,6 +90,20 @@ class TwistedBaseFactory(BuildFactory):
         if self.forceGarbageCollection:
             trialMode = trialMode + FORCEGC_FLAGS
         self.addStep(TwistedTrial, python=self.python, trialMode=trialMode, **kw)
+
+
+
+class PyFlakesBuildFactory(BuildFactory):
+    """
+    A build factory which just runs PyFlakes over the specified source.
+    """
+    def __init__(self, source):
+        BuildFactory.__init__(self, [source])
+        self.addStep(
+            PyFlakes,
+            descriptionDone="PyFlakes", flunkOnFailure=True,
+            command=["pyflakes", "."])
+
 
 
 class TwistedDocumentationBuildFactory(TwistedBaseFactory):

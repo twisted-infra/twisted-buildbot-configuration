@@ -4,7 +4,7 @@ Build classes specific to the Twisted codebase
 
 from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
-from buildbot.process.factory import BuildFactory
+from buildbot.process.factory import BuildFactory, s
 from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
@@ -270,6 +270,13 @@ class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):
             self, source, ["ipy"], buildExtensions=False, *a, **kw)
 
 
+pyOpenSSLSource = s(
+    Bzr,
+    baseURL="http://bazaar.launchpad.net/~exarkun/pyopenssl/",
+    defaultBranch="trunk",
+    mode="copy")
+
+
 class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
@@ -277,11 +284,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     def __init__(self):
         BuildFactory.__init__(self, [])
         self.uploadBase = 'public_html/builds/'
-        self.addStep(
-             Bzr,
-             baseURL="http://bazaar.launchpad.net/~exarkun/pyopenssl/",
-             defaultBranch="trunk",
-             mode="copy")
+        self.addStep(pyOpenSSLSource)
         self.addStep(
             LearnVersion, python=self.python("2.5"), package='version',
             workdir='source')
@@ -481,3 +484,54 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
     def trial(self, pyVersion):
         return "c:\\python%s\\scripts\\trial" % (pyVersion.replace('.', ''),)
+
+
+
+class GCoverageFactory(TwistedBaseFactory):
+    buildClass = Build
+
+    def __init__(self, python, tests):
+        TwistedBaseFactory.__init__(self, python, pyOpenSSLSource, False)
+
+        # Clean up any pycs left over since they might be wrong and
+        # mess up the test run.
+        self.addStep(RemovePYCs)
+
+        # Build the extensions with the necessary gcc tracing flags
+        self.addStep(
+            shell.Compile,
+            command=python + ["setup.py", "build_ext"],
+            env={'CFLAGS': '-fprofile-arcs -ftest-coverage'},
+            flunkOnFailure=True)
+
+        # Install it so the tests can be run
+        self.addStep(
+            shell.ShellCommand,
+            command=python + ["setup.py", "install", "--prefix", "installed"])
+
+        # Run the tests against the installed version
+        self.addTrialStep(
+            trial="/usr/bin/trial",
+            tests=tests,
+            env={'PYTHONPATH':
+                     'installed/lib/python2.5/site-packages'})
+
+        # Run geninfo and genhtml - together these generate the coverage report
+        self.addStep(
+            shell.ShellCommand,
+            command=["geninfo", "-b", ".", "."])
+        self.addStep(
+            shell.ShellCommand,
+            command=["bash", "-c", 'genhtml -o coverage-report `find . -name *.info`'])
+
+        # Bundle up the report
+        self.addStep(
+            shell.ShellCommand,
+            command=["tar", "czf", "coverage.tar.gz", "coverage-report"])
+
+        # Upload it to the master
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc='coverage.tar.gz',
+            masterdest=WithProperties(
+                'public_html/builds/pyopenssl-coverage-%(got_revision)s.tar.gz'))

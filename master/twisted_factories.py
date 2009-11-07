@@ -6,7 +6,7 @@ from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
 from buildbot.scheduler import Scheduler
-from buildbot.steps import shell, transfer
+from buildbot.steps import shell, transfer, master
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
 from buildbot.steps.python import PyFlakes
@@ -535,3 +535,17 @@ class GCoverageFactory(TwistedBaseFactory):
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
                 'public_html/builds/pyopenssl-coverage-%(got_revision)s.tar.gz'))
+
+        # Unarchive it so it can be viewed directly.  WithProperties
+        # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
+        self.addStep(
+            master.MasterShellCommand,
+            command=[
+                'bash', '-c',
+                'fname=`echo public_html/builds/pyopenssl-coverage-*.tar.gz`; '
+                'tar xzf $fname; '
+                'rev=${fname:38}; '
+                'rev=${rev/%.tar.gz/}; '
+                'rm -rf public_html/builds/pyopenssl-coverage-report-r$rev; '
+                'mv coverage-report public_html/builds/pyopenssl-coverage-report-r$rev; '
+                'rm $fname; '])

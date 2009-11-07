@@ -282,9 +282,8 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     Build and test PyOpenSSL.
     """
     def __init__(self):
-        BuildFactory.__init__(self, [])
+        BuildFactory.__init__(self, [pyOpenSSLSource])
         self.uploadBase = 'public_html/builds/'
-        self.addStep(pyOpenSSLSource)
         self.addStep(
             LearnVersion, python=self.python("2.5"), package='version',
             workdir='source')
@@ -389,6 +388,8 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
         """
         Return the path to the trial script in the framework.
         """
+        if self.osxVersion == "10.6":
+            return "/usr/bin/trial"
         return "/usr/local/bin/trial"
 
 
@@ -400,6 +401,10 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
             return "macosx-10.5-ppc"
         elif version == "2.4":
             return "macosx-10.5-fat"
+        elif self.osxVersion == "10.6":
+            return "macos-10.6-universal"
+        else:
+            return "UNKNOWN"
 
 
 

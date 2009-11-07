@@ -421,6 +421,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     def addTestStep(self, pyVersion):
         self.addStep(
             ShellCommand,
+            timeout=30,
             workdir="build/build/lib.%s-%s/" % (
                 self.platform(pyVersion), pyVersion),
             command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL\\test\\"])

@@ -402,7 +402,7 @@ class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
         elif version == "2.4":
             return "macosx-10.5-fat"
         elif self.osxVersion == "10.6":
-            return "macos-10.6-universal"
+            return "macosx-10.6-universal"
         else:
             return "UNKNOWN"
 

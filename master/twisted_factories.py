@@ -427,43 +427,36 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL\\test\\"])
 
 
-    def __init__(self, platform, compiler, pyVersion, extraInclude=None, extraLib=None):
+    def __init__(self, platform, compiler, pyVersion, opensslPath):
         PyOpenSSLBuildFactoryBase.__init__(self)
         python = self.python(pyVersion)
         buildCommand = [
-            python, "setup.py", "build_ext", "--compiler", compiler]
-        if extraInclude is not None:
-            buildCommand.extend(["-I", extraInclude])
-        if extraLib is not None:
-            buildCommand.extend(["-L", extraLib])
+            python, "setup.py",
+            "build_ext", "--compiler", compiler, "--with-openssl", opensslPath,
+            "build", "bdist", "bdist_wininst"]
+        if pyVersion >= "2.5":
+            buildCommand.append("bdist_msi")
+
         self.addStep(
             shell.Compile,
             command=buildCommand,
             flunkOnFailure=True)
-        self.addStep(
-            shell.Compile,
-            command=[python, "setup.py", "bdist"],
-            flunkOnFailure=True)
+
         self.addTestStep(pyVersion)
+
         self.addStep(
             transfer.FileUpload,
             slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32.zip'),
             masterdest=WithProperties(
                 self.uploadBase + 'pyOpenSSL-%(version)s.' + platform + '-py' + pyVersion + '.zip'))
-        self.addStep(
-            shell.Compile,
-            command=[python, "setup.py", "bdist_wininst"],
-            flunkOnFailure=True)
+
         self.addStep(
             transfer.FileUpload,
             slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.exe'),
             masterdest=WithProperties(
                 self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+
         if pyVersion >= "2.5":
-            self.addStep(
-                shell.Compile,
-                command=[python, "setup.py", "bdist_msi"],
-                flunkOnFailure=True)
             self.addStep(
                 transfer.FileUpload,
                 slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.msi'),
@@ -474,7 +467,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             shell.Compile,
             command=[python, "-c", 
                      "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py', {'__file__': 'setup.py'})",
-                     "bdist_egg"],
+                     "build_ext", "--with-openssl", opensslPath, "bdist_egg"],
             flunkOnFailure=True)
 
         eggName = 'pyOpenSSL-%(version)s-py' + pyVersion + '-win32.egg'

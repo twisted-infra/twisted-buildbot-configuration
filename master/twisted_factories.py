@@ -54,7 +54,7 @@ class TwistedBaseFactory(BuildFactory):
 
     forceGarbageCollection = False
 
-    def __init__(self, python, source, uncleanWarnings, trialMode=None):
+    def __init__(self, python, source, uncleanWarnings, trialTests=None, trialMode=None):
         BuildFactory.__init__(self, [source])
 
         if type(python) is str:
@@ -63,6 +63,9 @@ class TwistedBaseFactory(BuildFactory):
         self.python = python
         self.uncleanWarnings = uncleanWarnings
         self.trialMode = trialMode
+        if trialTests is None:
+            trialTests = ["twisted"]
+        self.trialTests = trialTests
 
         self.addStep(
             ReportPythonModuleVersions, 
@@ -89,6 +92,8 @@ class TwistedBaseFactory(BuildFactory):
             trialMode = trialMode + WARNING_FLAGS
         if self.forceGarbageCollection:
             trialMode = trialMode + FORCEGC_FLAGS
+        if 'tests' not in kw:
+            kw['tests'] = self.trialTests
         self.addStep(TwistedTrial, python=self.python, trialMode=trialMode, **kw)
 
 
@@ -132,8 +137,8 @@ class FullTwistedBuildFactory(TwistedBaseFactory):
                  runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
                  uncleanWarnings=True, trialMode=None,
-                 buildExtensions=True):
-        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings, trialMode=trialMode)
+                 trialTests=None, buildExtensions=True):
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings, trialTests=trialTests, trialMode=trialMode)
 
         assert isinstance(compileOpts, list)
         assert isinstance(compileOpts2, list)

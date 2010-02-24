@@ -12,7 +12,7 @@ from buildbot.steps.source import SVN, Bzr
 from buildbot.steps.python import PyFlakes
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
-    Trial, RemovePYCs, CheckDocumentation, LearnVersion
+    Trial, RemovePYCs, CheckDocumentation, LearnVersion, SetBuildProperty
 from pypy_steps import Translate
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
@@ -68,7 +68,7 @@ class TwistedBaseFactory(BuildFactory):
         self.trialTests = trialTests
 
         self.addStep(
-            ReportPythonModuleVersions, 
+            ReportPythonModuleVersions,
             python=self.python,
             moduleInfo=[("OpenSSL", "OpenSSL.__version__"),
                         ("Crypto", "Crypto.__version__"),
@@ -77,7 +77,7 @@ class TwistedBaseFactory(BuildFactory):
                         ("ctypes", "ctypes.__version__"),
                         ("gtk", "gtk.gtk_version"),
                         ("gtk", "gtk.pygtk_version"),
-                        ("win32api", 
+                        ("win32api",
                          "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
                         ("pyasn1", "pyasn1.majorVersionId")])
 
@@ -229,6 +229,49 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
             warnOnFailure=False, workdir="Twisted/install",
             env={"PYTHONPATH": "lib"})
 
+
+class TwistedBdistMsiFactory(TwistedBaseFactory):
+    treeStableTimer = 5*60
+
+    uploadBase = 'public_html/builds/'
+    def __init__(self, source, uncleanWarnings, platform, pyVersion):
+        python = self.python(pyVersion)
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
+        self.addStep(
+            LearnVersion, python=python, package='twisted', workdir='source')
+
+        def transformVersion(build):
+            return build.getProperty("version").split("+")[0].split("pre")[0]
+        self.addStep(
+            SetBuildProperty, property_name='versionMsi', value=transformVersion)
+        self.addStep(shell.ShellCommand,
+                command=[python, "-c", WithProperties(
+                     'version = \'%(versionMsi)s\'; '
+                     'f = file(\'twisted\copyright.py\', \'at\'); '
+                     'f.write(\'version = \' + repr(version)); '
+                     'f.close()')],
+                     haltOnFailure=True)
+        if pyVersion >= "2.5":
+            self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_msi"],
+                         haltOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.msi'),
+                masterdest=WithProperties(
+                    self.uploadBase + 'Twisted-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
+        else:
+            self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
+                         haltOnFailure=True)
+            self.addStep(
+                transfer.FileUpload,
+                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.exe'),
+                masterdest=WithProperties(
+                    self.uploadBase + 'Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+
+    def python(self, pyVersion):
+        return (
+            "c:\\python%s\\python.exe" % (
+                pyVersion.replace('.', ''),))
 
 
 class PyPyTranslationFactory(BuildFactory):
@@ -470,7 +513,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
         self.addStep(
             shell.Compile,
-            command=[python, "-c", 
+            command=[python, "-c",
                      "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py', {'__file__': 'setup.py'})",
                      "build_ext", "--with-openssl", opensslPath, "bdist_egg"],
             flunkOnFailure=True)

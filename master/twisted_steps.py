@@ -5,7 +5,7 @@ from twisted.python import log
 from buildbot.status import builder
 from buildbot.status.builder import SUCCESS, FAILURE, WARNINGS, SKIPPED
 from buildbot.process.buildstep import LogLineObserver, OutputProgressObserver
-from buildbot.process.buildstep import RemoteShellCommand
+from buildbot.process.buildstep import RemoteShellCommand, BuildStep
 from buildbot.steps.shell import ShellCommand, SetProperty
 
 try:
@@ -898,3 +898,24 @@ class LearnVersion(SetProperty):
             self,
             command=[python, '-c', self.src % dict(package=package)],
             property="version", **kw)
+
+
+class SetBuildProperty(BuildStep):
+
+    name = "set build property"
+
+    def __init__(self, property_name, value, **kwargs):
+        self.property_name = property_name
+        self.value = value
+        BuildStep.__init__(self, **kwargs)
+        self.addFactoryArguments(property_name=property_name, value=value)
+
+    def start(self):
+        if callable(self.value):
+            value = self.value(self.build)
+        else:
+            value = self.value
+        self.setProperty(self.property_name, value)
+        self.step_status.setText(['set props:', self.property_name])
+        self.addCompleteLog("property changes", "%s: %s" % (self.property_name, value))
+        return self.finished(SUCCESS)

@@ -162,14 +162,14 @@ class Win32RemovePYCs(ShellCommand):
 class GoodTwistedBuildFactory(TwistedBaseFactory):
     treeStableTimer = 5 * 60
 
-    forceGarbageCollection = True
-
     def __init__(self, source, python="python",
                  processDocs=False, runTestsRandomly=False,
                  compileOpts=[], compileOpts2=[],
                  uncleanWarnings=True,
-                 extraTrialArguments={}):
+                 extraTrialArguments={},
+                 forceGarbageCollection=False):
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
+        self.forceGarbageCollection = forceGarbageCollection
         if processDocs:
             self.addStep(ProcessDocs)
 

@@ -745,28 +745,48 @@ class ReportPythonModuleVersions(ShellCommand):
     """
     Load a number of Python modules and report their version information.
 
-    @ivar _moduleInfo: A list of two-tuples.  The first element of
+    @ivar _moduleInfo: A list of three-tuples.  The first element of
+        each tuple is a human-readable label.  The second element of
         each tuple is a string giving the FQPN of a module to import
-        to load version information from.  The second element of each
-        tuple is a string giving the FQPN of an object giving a
-        version.  Importing the first element must be all that is
-        necessary to make the second element accessible.
+        to load version information from.  The third element of each
+        tuple is a string giving a Python expression which, when
+        evaluated, produces the desired version information.
+        Importing the second element must be all that is necessary to
+        make the third element accessible.
+
+    @ivar _pkg_resources: A list of two-tuples.  The first element of
+        each tuple is a human-readable label.  The second element is
+        the name of a distribution which pkg_resources may be able to
+        find and report the version of.
     """
-    def __init__(self, python, moduleInfo, **kwargs):
+    def __init__(self, python, moduleInfo, pkg_resources, **kwargs):
         ShellCommand.__init__(self, **kwargs)
         self._python = python
         self._moduleInfo = moduleInfo
+        self._pkg_resources = pkg_resources
 
 
-    def _formatSource(self, moduleInfo):
-        template = (
+    def _formatSource(self, moduleInfo, pkg_resources):
+        normalTemplate = (
             'try: import %(module)s\n'
-            'except Exception, e: print "missing %(module)s", str(e)\n'
-            'else: print "found %(module)s, %(version)s =", %(version)s\n')
+            'except Exception, e: print "Failed %(label)s: missing %(module)s", str(e)\n'
+            'else: print "found %(label)s, %(version)s =", %(version)s\n')
         checks = '\n'.join([
-            template % dict(module=module, version=version)
-            for (module, version)
-            in moduleInfo])
+            normalTemplate % dict(label=label, module=module, version=version)
+            for (label, module, version)
+            in moduleInfo]) + '\n'
+
+        pkgresourcesTemplate = (
+            'try: import pkg_resources, %(module)s\n'
+            'except Exception, e: print "Failed %(label)s: missing %(module)s", str(e)\n'
+            'else:\n'
+            '\ttry: version = pkg_resources.get_distribution(%(module)r).version\n'
+            '\texcept Exception, e: print "Failed %(label)s:", str(e)\n'
+            '\telse: print "found %(label)s, distribution version =", version\n')
+        checks += '\n'.join([
+            pkgresourcesTemplate % dict(label=label, module=module)
+            for (label, module)
+            in pkg_resources]) + '\n'
 
         # Cannot have newlines in this code, or it isn't compatible on
         # both POSIX and Windows.  Also, quotes make things really
@@ -775,7 +795,8 @@ class ReportPythonModuleVersions(ShellCommand):
 
 
     def start(self):
-        command = self._python +["-c", self._formatSource(self._moduleInfo)]
+        command = self._python + [
+            "-c", self._formatSource(self._moduleInfo, self._pkg_resources)]
         self.setCommand(command)
         ShellCommand.start(self)
 

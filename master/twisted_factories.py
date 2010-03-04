@@ -70,16 +70,23 @@ class TwistedBaseFactory(BuildFactory):
         self.addStep(
             ReportPythonModuleVersions,
             python=self.python,
-            moduleInfo=[("OpenSSL", "OpenSSL.__version__"),
-                        ("Crypto", "Crypto.__version__"),
-                        ("gmpy", "gmpy.version()"),
-                        ("SOAPpy", "SOAPpy.__version__"),
-                        ("ctypes", "ctypes.__version__"),
-                        ("gtk", "gtk.gtk_version"),
-                        ("gtk", "gtk.pygtk_version"),
-                        ("win32api",
-                         "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
-                        ("pyasn1", "pyasn1.majorVersionId")])
+            moduleInfo=[
+                ("Python", "sys", "sys.version"),
+                ("OpenSSL", "OpenSSL", "OpenSSL.__version__"),
+                ("PyCrypto", "Crypto", "Crypto.__version__"),
+                ("gmpy", "gmpy", "gmpy.version()"),
+                ("SOAPpy", "SOAPpy", "SOAPpy.__version__"),
+                ("ctypes", "ctypes", "ctypes.__version__"),
+                ("gtk", "gtk", "gtk.gtk_version"),
+                ("pygtk", "gtk", "gtk.pygtk_version"),
+                ("pywin32", "win32api",
+                 "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
+                ("pyasn1", "pyasn1", "pyasn1.majorVersionId"),
+                ],
+            pkg_resources=[
+                ("subunit", "subunit"),
+                ("zope.interface", "zope.interface"),
+                ])
 
 
     def addTrialStep(self, **kw):

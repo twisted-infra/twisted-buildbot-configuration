@@ -544,8 +544,8 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 class GCoverageFactory(TwistedBaseFactory):
     buildClass = Build
 
-    def __init__(self, python, tests):
-        TwistedBaseFactory.__init__(self, python, pyOpenSSLSource, False)
+    def __init__(self, python, source):
+        TwistedBaseFactory.__init__(self, python, source, False)
 
         # Clean up any pycs left over since they might be wrong and
         # mess up the test run.
@@ -554,21 +554,14 @@ class GCoverageFactory(TwistedBaseFactory):
         # Build the extensions with the necessary gcc tracing flags
         self.addStep(
             shell.Compile,
-            command=python + ["setup.py", "build_ext"],
+            # PyOpenSSL doesn't need -i, because it is going to
+            # install anyway.  Twisted does, though.
+            command=python + ["setup.py", "build_ext"] + self.BUILD_OPTIONS,
             env={'CFLAGS': '-fprofile-arcs -ftest-coverage'},
             flunkOnFailure=True)
 
-        # Install it so the tests can be run
-        self.addStep(
-            shell.ShellCommand,
-            command=python + ["setup.py", "install", "--prefix", "installed"])
-
-        # Run the tests against the installed version
-        self.addTrialStep(
-            trial="/usr/bin/trial",
-            tests=tests,
-            env={'PYTHONPATH':
-                     'installed/lib/python2.5/site-packages'})
+        # Run the tests.
+        self.addTestSteps(python)
 
         # Run geninfo and genhtml - together these generate the coverage report
         self.addStep(
@@ -588,7 +581,8 @@ class GCoverageFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
-                'public_html/builds/pyopenssl-coverage-%(got_revision)s.tar.gz'))
+                'public_html/builds/%(project)s-coverage-%%(got_revision)s.tar.gz' % {
+                    'project': self.PROJECT}))
 
         # Unarchive it so it can be viewed directly.  WithProperties
         # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
@@ -596,10 +590,46 @@ class GCoverageFactory(TwistedBaseFactory):
             master.MasterShellCommand,
             command=[
                 'bash', '-c',
-                'fname=`echo public_html/builds/pyopenssl-coverage-*.tar.gz`; '
-                'tar xzf $fname; '
-                'rev=${fname:38}; '
-                'rev=${rev/%.tar.gz/}; '
-                'rm -rf public_html/builds/pyopenssl-coverage-report-r$rev; '
-                'mv coverage-report public_html/builds/pyopenssl-coverage-report-r$rev; '
-                'rm $fname; '])
+                ('fname=`echo public_html/builds/%(project)s-coverage-*.tar.gz`; '
+                 'tar xzf $fname; ' +
+                 ('rev=${fname:%s}; ' % (len(self.PROJECT) + 29,)) +
+                 'rev=${rev/%%.tar.gz/}; '
+                 'rm -rf public_html/builds/%(project)s-coverage-report-r$rev; '
+                 'mv coverage-report public_html/builds/%(project)s-coverage-report-r$rev; '
+                 'rm $fname; ') % {'project': self.PROJECT}])
+
+
+
+class PyOpenSSLGCoverageFactory(GCoverageFactory):
+    PROJECT = 'pyopenssl'
+    TESTS = 'OpenSSL'
+    BUILD_OPTIONS = []
+
+    def __init__(self, python):
+        GCoverageFactory.__init__(self, python, pyOpenSSLSource)
+
+
+    def addTestSteps(self, python):
+        # Install it so the tests can be run
+        self.addStep(
+            shell.ShellCommand,
+            command=python + ["setup.py", "install", "--prefix", "installed"])
+
+        # Run the tests against the installed version
+        self.addTrialStep(
+            trial="/usr/bin/trial",
+            tests=self.TESTS,
+            env={'PYTHONPATH':
+                     'installed/lib/python2.5/site-packages'})
+
+
+
+class TwistedGCoverageFactory(GCoverageFactory):
+    PROJECT = 'twisted'
+    TESTS = ['twisted.test.test_epoll',
+             'twisted.web.test.test_http',
+             'twisted.python.test.test_util']
+    BUILD_OPTIONS = ["-i"]
+
+    def addTestSteps(self, python):
+        self.addTrialStep(tests=self.TESTS)

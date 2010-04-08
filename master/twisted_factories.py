@@ -640,7 +640,6 @@ class TwistedGCoverageFactory(GCoverageFactory):
 
 
 
-
 class TwistedCoveragePyFactory(TwistedBaseFactory):
     OMIT_PATHS = [
         '/usr',
@@ -654,7 +653,8 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
          '--omit', ','.join(OMIT_PATHS), '-i'],
         ['rm', '-f', '.coverage'],
         ['rm', '-rf', 'public_html/builds/twisted-coverage'],
-        ['mv', 'twisted-coverage', 'public_html/builds/twisted-coverage']]
+        ['mv', 'twisted-coverage', 
+         WithProperties('public_html/builds/twisted-coverage.py-r%(got_revision)s')]]
 
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)

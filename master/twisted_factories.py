@@ -631,7 +631,8 @@ class TwistedGCoverageFactory(GCoverageFactory):
     PROJECT = 'twisted'
     TESTS = ['twisted.test.test_epoll',
              'twisted.web.test.test_http',
-             'twisted.python.test.test_util']
+             'twisted.python.test.test_util',
+             'twisted.internet.test.test_sigchld']
     BUILD_OPTIONS = ["-i"]
 
     def addTestSteps(self, python):

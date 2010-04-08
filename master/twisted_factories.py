@@ -643,19 +643,13 @@ class TwistedGCoverageFactory(GCoverageFactory):
 class TwistedCoveragePyFactory(TwistedBaseFactory):
     OMIT_PATHS = [
         '/usr',
-        '/srv/bb-slave/.local',
-        '/srv/bb-slave/Projects',
-        '/srv/bb-slave/Run/slave/twisted-coverage.py/Twisted/_trial_temp',
+        '_trial_temp',
         ]
-        
-    COVERAGE_COMMANDS = [
-        ['coverage', 'html', '-d', 'twisted-coverage', 
-         '--omit', ','.join(OMIT_PATHS), '-i'],
-        ['rm', '-f', '.coverage'],
-        ['rm', '-rf', 'public_html/builds/twisted-coverage'],
-        ['mv', 'twisted-coverage', 
-         WithProperties('public_html/builds/twisted-coverage.py-r%(got_revision)s')]]
 
+    REPORT_COMMAND = [
+        'coverage', 'html', '-d', 'twisted-coverage', 
+        '--omit', ','.join(OMIT_PATHS), '-i']
+        
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
         self.addStep(
@@ -664,8 +658,12 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             flunkOnFailure=True)
         self.addTrialStep(python=["coverage", "run"])
         self.addStep(
-            transfer.FileUpload,
-            slavesrc='.coverage',
-            masterdest='.coverage')
-        for command in self.COVERAGE_COMMANDS:
-            self.addStep(MasterShellCommand, command=command)
+            shell.ShellCommand,
+            command=self.REPORT_COMMAND)
+        self.addStep(
+            transfer.DirectoryUpload,
+            workdir='Twisted',
+            slavesrc='twisted-coverage',
+            masterdest=WithProperties('public_html/builds/twisted-coverage.py-r%(got_revision)s'),
+            blocksize=2 ** 16,
+            compress='gz')

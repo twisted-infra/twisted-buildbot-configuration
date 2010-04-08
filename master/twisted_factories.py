@@ -2,17 +2,20 @@
 Build classes specific to the Twisted codebase
 """
 
+import os
+
 from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
 from buildbot.scheduler import Scheduler
-from buildbot.steps import shell, transfer, master
+from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
 from buildbot.steps.python import PyFlakes
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
-    Trial, RemovePYCs, CheckDocumentation, LearnVersion, SetBuildProperty
+    Trial, RemovePYCs, CheckDocumentation, LearnVersion, SetBuildProperty, \
+    MasterShellCommand
 from pypy_steps import Translate
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
@@ -101,7 +104,9 @@ class TwistedBaseFactory(BuildFactory):
             trialMode = trialMode + FORCEGC_FLAGS
         if 'tests' not in kw:
             kw['tests'] = self.trialTests
-        self.addStep(TwistedTrial, python=self.python, trialMode=trialMode, **kw)
+        if 'python' not in kw:
+            kw['python'] = self.python
+        self.addStep(TwistedTrial, trialMode=trialMode, **kw)
 
 
 
@@ -554,8 +559,6 @@ class GCoverageFactory(TwistedBaseFactory):
         # Build the extensions with the necessary gcc tracing flags
         self.addStep(
             shell.Compile,
-            # PyOpenSSL doesn't need -i, because it is going to
-            # install anyway.  Twisted does, though.
             command=python + ["setup.py", "build_ext"] + self.BUILD_OPTIONS,
             env={'CFLAGS': '-fprofile-arcs -ftest-coverage'},
             flunkOnFailure=True)
@@ -587,7 +590,7 @@ class GCoverageFactory(TwistedBaseFactory):
         # Unarchive it so it can be viewed directly.  WithProperties
         # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
         self.addStep(
-            master.MasterShellCommand,
+            MasterShellCommand,
             command=[
                 'bash', '-c',
                 ('fname=`echo public_html/builds/%(project)s-coverage-*.tar.gz`; '
@@ -633,3 +636,35 @@ class TwistedGCoverageFactory(GCoverageFactory):
 
     def addTestSteps(self, python):
         self.addTrialStep(tests=self.TESTS)
+
+
+
+
+class TwistedCoveragePyFactory(TwistedBaseFactory):
+    OMIT_PATHS = [
+        '/usr',
+        '/srv/bb-slave/.local',
+        '/srv/bb-slave/Projects',
+        '/srv/bb-slave/Run/slave/twisted-coverage.py/Twisted/_trial_temp',
+        ]
+        
+    COVERAGE_COMMANDS = [
+        ['coverage', 'html', '-d', 'twisted-coverage', 
+         '--omit', ','.join(OMIT_PATHS), '-i'],
+        ['rm', '-f', '.coverage'],
+        ['rm', '-rf', 'public_html/builds/twisted-coverage'],
+        ['mv', 'twisted-coverage', 'public_html/builds/twisted-coverage']]
+
+    def __init__(self, python, source):
+        TwistedBaseFactory.__init__(self, python, source, False)
+        self.addStep(
+            shell.Compile,
+            command=python + ["setup.py", "build_ext", "-i"],
+            flunkOnFailure=True)
+        self.addTrialStep(python=["coverage", "run"])
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc='.coverage',
+            masterdest='.coverage')
+        for command in self.COVERAGE_COMMANDS:
+            self.addStep(MasterShellCommand, command=command)

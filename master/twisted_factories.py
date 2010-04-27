@@ -656,7 +656,7 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             shell.Compile,
             command=python + ["setup.py", "build_ext", "-i"],
             flunkOnFailure=True)
-        self.addTrialStep(python=["coverage", "run"])
+        self.addTrialStep(python=["coverage", "run", "--branch"])
         self.addStep(
             shell.ShellCommand,
             command=self.REPORT_COMMAND)

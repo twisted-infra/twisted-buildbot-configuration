@@ -307,11 +307,10 @@ class TwistedPyPyBuildFactory(BuildFactory):
     def __init__(self, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
-            SVN,
+            Bzr,
             workdir="build/Twisted-src",
             baseURL="svn://svn.twistedmatrix.com/svn/Twisted/",
-            defaultBranch="trunk",
-            mode="copy")
+            defaultBranch="trunk")
         self.addStep(
             Trial,
             workdir="build/pypy-src/pypy/translator/goal",

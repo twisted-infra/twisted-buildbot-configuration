@@ -138,7 +138,7 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
             workdir='.',
             slavesrc='./Twisted/apidocs.tar.bz2',
             masterdest=WithProperties(
-                'public_html/builds/apidocs-%(got_revision)s.tar.bz2'))
+                'public_html/builds/apidocs-%(revision)s.tar.bz2'))
 
 
 
@@ -310,7 +310,11 @@ class TwistedPyPyBuildFactory(BuildFactory):
             Bzr,
             workdir="build/Twisted-src",
             baseURL="svn://svn.twistedmatrix.com/svn/Twisted/",
-            defaultBranch="trunk")
+            defaultBranch="trunk",
+            # See master.cfg for explanation of this crap
+            forceSharedRepo=True,
+            alwaysUseLatest=True,
+            retry=(15, 8))
         self.addStep(
             Trial,
             workdir="build/pypy-src/pypy/translator/goal",
@@ -583,7 +587,7 @@ class GCoverageFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
-                'public_html/builds/%(project)s-coverage-%%(got_revision)s.tar.gz' % {
+                'public_html/builds/%(project)s-coverage-%%(revision)s.tar.gz' % {
                     'project': self.PROJECT}))
 
         # Unarchive it so it can be viewed directly.  WithProperties
@@ -663,6 +667,6 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             transfer.DirectoryUpload,
             workdir='Twisted',
             slavesrc='twisted-coverage',
-            masterdest=WithProperties('public_html/builds/twisted-coverage.py-r%(got_revision)s'),
+            masterdest=WithProperties('public_html/builds/twisted-coverage.py-r%(revision)s'),
             blocksize=2 ** 16,
             compress='gz')

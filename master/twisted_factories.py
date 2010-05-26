@@ -552,6 +552,8 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 class GCoverageFactory(TwistedBaseFactory):
     buildClass = Build
 
+    revisionProperty = "revision"
+
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
 
@@ -587,8 +589,9 @@ class GCoverageFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
-                'public_html/builds/%(project)s-coverage-%%(revision)s.tar.gz' % {
-                    'project': self.PROJECT}))
+                'public_html/builds/%(project)s-coverage-%%(%(revisionProperty)s)s.tar.gz' % {
+                    'project': self.PROJECT,
+                    'revisionProperty': self.revisionProperty}))
 
         # Unarchive it so it can be viewed directly.  WithProperties
         # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
@@ -610,6 +613,8 @@ class PyOpenSSLGCoverageFactory(GCoverageFactory):
     PROJECT = 'pyopenssl'
     TESTS = 'OpenSSL'
     BUILD_OPTIONS = []
+
+    revisionProperty = 'got_revision'
 
     def __init__(self, python):
         GCoverageFactory.__init__(self, python, pyOpenSSLSource)

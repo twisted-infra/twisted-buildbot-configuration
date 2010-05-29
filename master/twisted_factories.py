@@ -58,7 +58,10 @@ class TwistedBaseFactory(BuildFactory):
     forceGarbageCollection = False
 
     def __init__(self, python, source, uncleanWarnings, trialTests=None, trialMode=None):
-        BuildFactory.__init__(self, [source])
+        if not isinstance(source, list):
+            source = [source]
+
+        BuildFactory.__init__(self, source)
 
         if type(python) is str:
             python = [python]
@@ -115,7 +118,9 @@ class PyFlakesBuildFactory(BuildFactory):
     A build factory which just runs PyFlakes over the specified source.
     """
     def __init__(self, source):
-        BuildFactory.__init__(self, [source])
+        if not isinstance(source, list):
+            source = [source]
+        BuildFactory.__init__(self, source)
         self.addStep(
             PyFlakes,
             descriptionDone="PyFlakes", flunkOnFailure=True,

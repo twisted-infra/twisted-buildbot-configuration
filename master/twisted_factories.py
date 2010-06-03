@@ -276,14 +276,14 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
                 slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.msi'),
                 masterdest=WithProperties(
                     self.uploadBase + 'Twisted-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
-        else:
-            self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
-                         haltOnFailure=True)
-            self.addStep(
-                transfer.FileUpload,
-                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.exe'),
-                masterdest=WithProperties(
-                    self.uploadBase + 'Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+
+        self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
+                     haltOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.exe'),
+            masterdest=WithProperties(
+                self.uploadBase + 'Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
 
     def python(self, pyVersion):
         return (

@@ -301,35 +301,53 @@ class PyPyTranslationFactory(BuildFactory):
             Translate,
             translationArgs=translationArguments,
             targetArgs=targetArguments)
-        pypyc = "../pypy/translator/goal/pypy-c"
-        self.addStep(
-            ShellCommand,
-            # Can't make workdir build, .. won't resolve properly
-            # because build is a symlink.
-            workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
-        self.addStep(
-            ShellCommand,
-            workdir="build/pycrypto-2.1.0",
-            command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
-        self.addStep(
-            ShellCommand,
-            workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
-        self.addStep(
-            ShellCommand,
-            workdir="build/pyOpenSSL-0.10",
-            command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
+
+        # Don't try building these yet.  PyPy doesn't quite work well
+        # enough.
+#         pypyc = "../pypy/translator/goal/pypy-c"
+#         self.addStep(
+#             ShellCommand,
+#             # Can't make workdir build, .. won't resolve properly
+#             # because build is a symlink.
+#             workdir=".",
+#             command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
+#         self.addStep(
+#             ShellCommand,
+#             workdir="build/pycrypto-2.1.0",
+#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
+#         self.addStep(
+#             ShellCommand,
+#             workdir=".",
+#             command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
+#         self.addStep(
+#             ShellCommand,
+#             workdir="build/pyOpenSSL-0.10",
+#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
+#         self.addStep(
+#             ShellCommand,
+#             workdir=".",
+#             command=["/bin/tar", "Cxzf", "build", "zope.interface-3.6.1.tar.gz"])
+#         self.addStep(
+#             ShellCommand,
+#             workdir="build/zope.interface-3.6.1",
+#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
 
 
 
 class TwistedPyPyBuildFactory(BuildFactory):
     def __init__(self, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
-        self.addStep(
-            ShellCommand,
-            workdir="build",
-            command=["../pypy-c", "setup.py", "build_ext", "-i"])
+#         self.addStep(
+#             ShellCommand,
+#             workdir="build",
+#             command=["../pypy-c", "setup.py", "build_ext", "-i"])
+
+        # This would include CPython site-packages (which might have
+        # extension modules, oh no) and our own little site-packages
+        # which could include PyCrypto and pyOpenSSL.  PyPy doesn't
+        # work that well yet though.
+#         PYTHONPATH = "../site-packages:/usr/lib/python2.5/site-packages"
+        PYTHONPATH = "/usr/lib/python2.5/site-packages"
         self.addStep(
             Trial,
             workdir="build",
@@ -337,11 +355,7 @@ class TwistedPyPyBuildFactory(BuildFactory):
             testpath=None,
             trial="bin/trial",
             tests=["twisted"],
-            env={"PATH": "/usr/bin:.",
-                 # PyPy doesn't currently find this on its own.  Also,
-                 # we want to include the place where pypy-built
-                 # extensions live.
-                 "PYTHONPATH": "/usr/lib/python2.5/site-packages:../site-packages"})
+            env={"PATH": "/usr/bin:.", "PYTHONPATH": PYTHONPATH})
 
 
 class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):

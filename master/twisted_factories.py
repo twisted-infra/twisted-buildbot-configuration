@@ -2,8 +2,6 @@
 Build classes specific to the Twisted codebase
 """
 
-import os
-
 from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
@@ -12,11 +10,11 @@ from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.source import SVN, Bzr
 from buildbot.steps.python import PyFlakes
+from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, CheckDocumentation, LearnVersion, SetBuildProperty, \
     MasterShellCommand
-from pypy_steps import Translate
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
@@ -294,10 +292,8 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
 class PyPyTranslationFactory(BuildFactory):
     def __init__(self, translationArguments, targetArguments, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
-
         self.addStep(
             SVN,
-            workdir="build/pypy-src",
             baseURL="http://codespeak.net/svn/pypy/",
             defaultBranch="trunk",
             mode="copy")
@@ -305,6 +301,25 @@ class PyPyTranslationFactory(BuildFactory):
             Translate,
             translationArgs=translationArguments,
             targetArgs=targetArguments)
+        pypyc = "../pypy/translator/goal/pypy-c"
+        self.addStep(
+            ShellCommand,
+            # Can't make workdir build, .. won't resolve properly
+            # because build is a symlink.
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/pycrypto-2.1.0",
+            command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
+        self.addStep(
+            ShellCommand,
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/pyOpenSSL-0.10",
+            command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
 
 
 
@@ -312,24 +327,21 @@ class TwistedPyPyBuildFactory(BuildFactory):
     def __init__(self, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
-            Bzr,
-            workdir="build/Twisted-src",
-            baseURL="svn://svn.twistedmatrix.com/svn/Twisted/",
-            defaultBranch="trunk",
-            # See master.cfg for explanation of this crap
-            forceSharedRepo=True,
-            alwaysUseLatest=True,
-            retry=(15, 8))
+            ShellCommand,
+            workdir="build",
+            command=["../pypy-c", "setup.py", "build_ext", "-i"])
         self.addStep(
             Trial,
-            workdir="build/pypy-src/pypy/translator/goal",
-            python=["pypy-c"],
+            workdir="build",
+            python=["../pypy-c"],
             testpath=None,
-            trial="../../../../Twisted-src/bin/trial",
+            trial="bin/trial",
             tests=["twisted"],
             env={"PATH": "/usr/bin:.",
-                 # PyPy doesn't currently find this on its own.
-                 "PYTHONPATH": "/usr/lib/python2.5/site-packages"})
+                 # PyPy doesn't currently find this on its own.  Also,
+                 # we want to include the place where pypy-built
+                 # extensions live.
+                 "PYTHONPATH": "/usr/lib/python2.5/site-packages:../site-packages"})
 
 
 class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):

@@ -346,8 +346,8 @@ class TwistedPyPyBuildFactory(BuildFactory):
         # extension modules, oh no) and our own little site-packages
         # which could include PyCrypto and pyOpenSSL.  PyPy doesn't
         # work that well yet though.
-#         PYTHONPATH = "../site-packages:/usr/lib/python2.5/site-packages"
-        PYTHONPATH = "/usr/lib/python2.5/site-packages"
+#         PYTHONPATH = "../site-packages:/usr/lib/python2.6/dist-packages"
+        PYTHONPATH = "/usr/lib/python2.6/dist-packages"
         self.addStep(
             Trial,
             workdir="build",

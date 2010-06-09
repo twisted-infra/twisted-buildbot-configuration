@@ -331,10 +331,10 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             mode="copy")
         self.addStep(
             ShellCommand,
-            command=["./configure", "--prefix=install"])
+            command="./configure --prefix=$PWD/install")
         self.addStep(
             ShellCommand,
-            command=["make", "-j2", "install"])
+            command=["make", "install"])
         pythonc = "install/bin/python"
         self.buildModules(pythonc)
             

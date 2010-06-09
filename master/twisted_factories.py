@@ -318,6 +318,14 @@ class InterpreterBuilderMixin:
             ShellCommand,
             workdir="build/zope.interface-3.6.1",
             command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+        self.addStep(
+            ShellCommand,
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "pyasn1-0.0.11a.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/pyasn1-0.0.11a",
+            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
 
 
 

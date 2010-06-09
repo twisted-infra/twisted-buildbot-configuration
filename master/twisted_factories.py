@@ -289,7 +289,58 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
                 pyVersion.replace('.', ''),))
 
 
-class PyPyTranslationFactory(BuildFactory):
+class InterpreterBuilderMixin:
+    def buildModules(self, python):
+        python = "../" + python
+        self.addStep(
+            ShellCommand,
+            # Can't make workdir build, .. won't resolve properly
+            # because build is a symlink.
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/pycrypto-2.1.0",
+            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+        self.addStep(
+            ShellCommand,
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/pyOpenSSL-0.10",
+            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+        self.addStep(
+            ShellCommand,
+            workdir=".",
+            command=["/bin/tar", "Cxzf", "build", "zope.interface-3.6.1.tar.gz"])
+        self.addStep(
+            ShellCommand,
+            workdir="build/zope.interface-3.6.1",
+            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+
+
+
+class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
+    def __init__(self, *a, **kw):
+        BuildFactory.__init__(self, *a, **kw)
+        self.addStep(
+            SVN,
+            baseURL="http://svn.python.org/projects/python/",
+            defaultBranch="trunk",
+            mode="copy")
+        self.addStep(
+            ShellCommand,
+            command=["./configure", "--prefix=install"])
+        self.addStep(
+            ShellCommand,
+            command=["make", "-j2", "install"])
+        pythonc = "install/bin/python"
+        self.buildModules(pythonc)
+            
+
+
+class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
     def __init__(self, translationArguments, targetArguments, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
@@ -304,33 +355,8 @@ class PyPyTranslationFactory(BuildFactory):
 
         # Don't try building these yet.  PyPy doesn't quite work well
         # enough.
-#         pypyc = "../pypy/translator/goal/pypy-c"
-#         self.addStep(
-#             ShellCommand,
-#             # Can't make workdir build, .. won't resolve properly
-#             # because build is a symlink.
-#             workdir=".",
-#             command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
-#         self.addStep(
-#             ShellCommand,
-#             workdir="build/pycrypto-2.1.0",
-#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
-#         self.addStep(
-#             ShellCommand,
-#             workdir=".",
-#             command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
-#         self.addStep(
-#             ShellCommand,
-#             workdir="build/pyOpenSSL-0.10",
-#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
-#         self.addStep(
-#             ShellCommand,
-#             workdir=".",
-#             command=["/bin/tar", "Cxzf", "build", "zope.interface-3.6.1.tar.gz"])
-#         self.addStep(
-#             ShellCommand,
-#             workdir="build/zope.interface-3.6.1",
-#             command=[pypyc, "setup.py", "clean", "install", "--prefix", ".."])
+        # pypyc = "pypy/translator/goal/pypy-c"
+        # self.buildModules(pypyc)
 
 
 

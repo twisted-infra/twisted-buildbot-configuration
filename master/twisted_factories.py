@@ -290,42 +290,47 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
 
 
 class InterpreterBuilderMixin:
-    def buildModules(self, python):
-        python = "../" + python
+    def buildModule(self, python, basename):
         self.addStep(
             ShellCommand,
             # Can't make workdir build, .. won't resolve properly
             # because build is a symlink.
             workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "pycrypto-2.1.0.tar.gz"])
+            command=["/bin/tar", "Cxzf", "build", basename + ".tar.gz"])
         self.addStep(
             ShellCommand,
-            workdir="build/pycrypto-2.1.0",
+            workdir="build/" + basename,
             command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+
+
+    def buildModules(self, python):
+        python = "../" + python
+
+        projects = [
+            "pycrypto-2.1.0",
+            "gmpy-101",
+            "pyOpenSSL-0.10",
+            "zope.interface-3.6.1",
+            "pyasn1-0.0.11a",
+            ]
+
+        for basename in projects:
+            self.buildModule(python, basename)
+
+        # Always trying to be special.
         self.addStep(
             ShellCommand,
             workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "pyOpenSSL-0.10.tar.gz"])
+            command=["/bin/tar", "Cxzf", "build", "subunit-0.0.5.tar.gz"])
         self.addStep(
             ShellCommand,
-            workdir="build/pyOpenSSL-0.10",
-            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+            workdir="build/subunit-0.0.5",
+            env={"PYTHON": python},
+            command="./configure --prefix=${PWD}/../install")
         self.addStep(
             ShellCommand,
-            workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "zope.interface-3.6.1.tar.gz"])
-        self.addStep(
-            ShellCommand,
-            workdir="build/zope.interface-3.6.1",
-            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
-        self.addStep(
-            ShellCommand,
-            workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "pyasn1-0.0.11a.tar.gz"])
-        self.addStep(
-            ShellCommand,
-            workdir="build/pyasn1-0.0.11a",
-            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+            workdir="build/subunit-0.0.5",
+            command=["make", "install"])
 
 
 

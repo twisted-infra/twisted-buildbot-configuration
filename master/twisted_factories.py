@@ -253,7 +253,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
         python = self.python(pyVersion)
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
         self.addStep(
-            LearnVersion, python=python, package='twisted', workdir='source')
+            LearnVersion, python=python, package='twisted', workdir='Twisted')
 
         def transformVersion(build):
             return build.getProperty("version").split("+")[0].split("pre")[0]

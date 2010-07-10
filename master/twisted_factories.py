@@ -145,6 +145,31 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
 
 
 
+class TwistedSphinxBuildFactory(TwistedBaseFactory):
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(self, python, source, False)
+        # Get rid of the results of the last run
+        self.addStep(
+            shell.ShellCommand,
+            command=['hg', 'clean', '--all', '--exclude', 'lore2sphinx.conf'],
+            workdir='lore2sphinx')
+        # Generate the docs anew
+        self.addStep(
+            shell.ShellCommand,
+            command=self.python + ['l2s_builder.py'],
+            workdir='lore2sphinx',
+            env={'PYTHONPATH': '.'})
+        # Upload the result
+        self.addStep(
+            transfer.DirectoryUpload,
+            workdir='lore2sphinx/profiles/twisted/build',
+            slavesrc='html',
+            masterdest=WithProperties('public_html/builds/sphinx-html-%(got_revision)s'),
+            blocksize=2 ** 16,
+            compress='gz')
+
+
+
 class FullTwistedBuildFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 

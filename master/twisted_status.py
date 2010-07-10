@@ -12,6 +12,9 @@ _backgroundColors = {
     FAILURE: "red",
     SKIPPED: "blue",
     EXCEPTION: "purple",
+    
+    # This is a buildbot bug or something.
+    None: "yellow",
     }
 
 # /boxes[-things]

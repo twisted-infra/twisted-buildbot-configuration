@@ -513,26 +513,6 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
 
 
-class DebianPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
-    """
-    Build and test a Debian (or Debian-derivative) PyOpenSSL package.
-    """
-    def __init__(self, versions, source, platform, distro, packageFiles, **kw):
-        LinuxPyOpenSSLBuildFactory.__init__(self, versions, source, platform, **kw)
-        self.addStep(
-            shell.ShellCommand,
-            command=["cp", "-a", distro, "debian"])
-        self.addStep(
-            shell.ShellCommand,
-            command=["fakeroot", "make", "-f", "debian/rules", "binary"])
-        for fileName in packageFiles:
-            self.addStep(
-                transfer.FileUpload,
-                slavesrc="../" + fileName,
-                masterdest=self.uploadBase + fileName)
-
-
-
 class OSXPyOpenSSLBuildFactory(LinuxPyOpenSSLBuildFactory):
     """
     Build and test an OS-X PyOpenSSL package.

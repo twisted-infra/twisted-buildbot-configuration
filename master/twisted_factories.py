@@ -7,7 +7,7 @@ from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
 from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
-from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import SVN, Bzr
 from buildbot.steps.python import PyFlakes
 from pypy_steps import Translate
@@ -442,16 +442,20 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     def __init__(self):
         BuildFactory.__init__(self, [pyOpenSSLSource])
         self.uploadBase = 'public_html/builds/'
+        self.learnVersion()
+
+
+    def learnVersion(self):
         self.addStep(
-            LearnVersion, python=self.python("2.5"), package='version',
+            SetProperty,
+            command=[self.python("2.5"), "-Wignore", "setup.py", "--version"],
+            property="version",
             workdir='source')
 
 
     def addTestStep(self, pyVersion):
         self.addStep(
             Trial,
-            workdir="build/build/lib.%s-%s" % (
-                self.platform(pyVersion), pyVersion),
             python=self.python(pyVersion),
             trial=self.trial(pyVersion),
             tests="OpenSSL",
@@ -465,6 +469,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     def __init__(self, versions, source, platform=None, bdistEnv=None):
         PyOpenSSLBuildFactoryBase.__init__(self)
+        
         self._platform = platform
         self.bdistEnv = bdistEnv
         if source:
@@ -482,7 +487,15 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             platform = self.platform(pyVersion)
             self.addStep(
                 shell.Compile,
-                command=[python, "setup.py", "bdist"],
+                # Try cleaning up what was there before so this is a
+                # reproducable build (clean --all doesn't actually
+                # work so well, but try anyway).  Then build the
+                # extensions in-place and without regard for file
+                # timestamps (which hopefully also increases
+                # reproducability and works around any files the clean
+                # step missed).  Last build a binary distribution for
+                # upload.
+                command=[python, "setup.py", "clean", "--all", "build_ext", "-i", "--force", "bdist"],
                 env=self.bdistEnv,
                 flunkOnFailure=True)
             self.addTestStep(pyVersion)
@@ -687,7 +700,7 @@ class GCoverageFactory(TwistedBaseFactory):
 class PyOpenSSLGCoverageFactory(GCoverageFactory):
     PROJECT = 'pyopenssl'
     TESTS = 'OpenSSL'
-    BUILD_OPTIONS = []
+    BUILD_OPTIONS = ['-i']
 
     revisionProperty = 'got_revision'
 
@@ -696,17 +709,9 @@ class PyOpenSSLGCoverageFactory(GCoverageFactory):
 
 
     def addTestSteps(self, python):
-        # Install it so the tests can be run
-        self.addStep(
-            shell.ShellCommand,
-            command=python + ["setup.py", "install", "--prefix", "installed"])
-
-        # Run the tests against the installed version
         self.addTrialStep(
             trial="/usr/bin/trial",
-            tests=self.TESTS,
-            env={'PYTHONPATH':
-                     'installed/lib/python2.5/site-packages'})
+            tests=self.TESTS)
 
 
 

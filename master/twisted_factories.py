@@ -445,7 +445,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     def learnVersion(self):
         self.addStep(
             SetProperty,
-            command=[self.python("2.5"), "-Wignore", "setup.py", "--version"],
+            command=[self.python("2"), "-Wignore", "setup.py", "--version"],
             property="version",
             workdir='source')
 

@@ -328,44 +328,41 @@ class InterpreterBuilderMixin:
             command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
 
 
-    def buildModules(self, python):
+    def buildModules(self, python, projects):
         python = "../" + python
 
-        projects = [
-            "pycrypto-2.1.0",
-            "gmpy-101",
-            "pyOpenSSL-0.10",
-            "zope.interface-3.6.1",
-            "pyasn1-0.0.11a",
-            ]
-
         for basename in projects:
-            self.buildModule(python, basename)
+            if "subunit" in basename:
+                # Always trying to be special.
+                self.buildSubunit(python, basename)
+            else:
+                self.buildModule(python, basename)
 
-        # Always trying to be special.
+    def buildSubunit(self, python, basename):
+        dirname = basename.split('.tar.gz')[0]
         self.addStep(
             ShellCommand,
             workdir=".",
-            command=["/bin/tar", "Cxzf", "build", "subunit-0.0.5.tar.gz"])
+            command=["/bin/tar", "Cxzf", "build", basename])
         self.addStep(
             ShellCommand,
-            workdir="build/subunit-0.0.5",
+            workdir="build/" + dirname,
             env={"PYTHON": python},
             command="./configure --prefix=${PWD}/../install")
         self.addStep(
             ShellCommand,
-            workdir="build/subunit-0.0.5",
+            workdir="build/" + dirname,
             command=["make", "install"])
 
 
 
 class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
-    def __init__(self, *a, **kw):
+    def __init__(self, branch, python, projects, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
             SVN,
             baseURL="http://svn.python.org/projects/python/",
-            defaultBranch="trunk",
+            defaultBranch=branch,
             mode="copy")
         self.addStep(
             ShellCommand,
@@ -373,8 +370,8 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
         self.addStep(
             ShellCommand,
             command=["make", "install"])
-        pythonc = "install/bin/python"
-        self.buildModules(pythonc)
+        pythonc = "install/bin/" + python
+        self.buildModules(pythonc, projects)
             
 
 

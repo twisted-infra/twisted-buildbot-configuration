@@ -436,27 +436,41 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    def __init__(self):
+    def __init__(self, useTrial=True):
         BuildFactory.__init__(self, [pyOpenSSLSource])
         self.uploadBase = 'public_html/builds/'
+        self.useTrial = useTrial
         self.learnVersion()
 
 
     def learnVersion(self):
         self.addStep(
             SetProperty,
-            command=[self.python("2"), "-Wignore", "setup.py", "--version"],
+            command=[self.python(""), "-Wignore", "setup.py", "--version"],
             property="version",
             workdir='source')
 
 
     def addTestStep(self, pyVersion):
+        if self.useTrial:
+            self.addStep(
+                Trial,
+                python=self.python(pyVersion),
+                trial=self.trial(pyVersion),
+                tests="OpenSSL",
+                testpath=None)
+        else:
+            self.addTestWithDiscoverStep(pyVersion)
+
+
+    def addTestWithDiscoverStep(self, pyVersion):
+        """
+        Add a step to run the test suite using the discover module.
+        """
         self.addStep(
-            Trial,
-            python=self.python(pyVersion),
-            trial=self.trial(pyVersion),
-            tests="OpenSSL",
-            testpath=None)
+            ShellCommand,
+            timeout=30,
+            command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL/test/"])
 
 
 
@@ -464,8 +478,8 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     Build and test a Linux (or Linux-like) PyOpenSSL package.
     """
-    def __init__(self, versions, source, platform=None, bdistEnv=None):
-        PyOpenSSLBuildFactoryBase.__init__(self)
+    def __init__(self, versions, source, platform=None, bdistEnv=None, useTrial=True):
+        PyOpenSSLBuildFactoryBase.__init__(self, useTrial)
         
         self._platform = platform
         self.bdistEnv = bdistEnv
@@ -566,17 +580,8 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 pyVersion.replace('.', ''),))
 
 
-    def addTestStep(self, pyVersion):
-        self.addStep(
-            ShellCommand,
-            timeout=30,
-            workdir="build/build/lib.%s-%s/" % (
-                self.platform(pyVersion), pyVersion),
-            command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL\\test\\"])
-
-
-    def __init__(self, platform, compiler, pyVersion, opensslPath):
-        PyOpenSSLBuildFactoryBase.__init__(self)
+    def __init__(self, platform, compiler, pyVersion, opensslPath, useTrial=False):
+        PyOpenSSLBuildFactoryBase.__init__(self, useTrial)
         python = self.python(pyVersion)
         buildCommand = [
             python, "setup.py",

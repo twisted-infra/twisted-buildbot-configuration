@@ -436,17 +436,26 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     Build and test PyOpenSSL.
     """
-    def __init__(self, useTrial=True):
+    def __init__(self, pyVersion, useTrial=True):
         BuildFactory.__init__(self, [pyOpenSSLSource])
         self.uploadBase = 'public_html/builds/'
         self.useTrial = useTrial
-        self.learnVersion()
+        self.learnVersion(pyVersion)
 
 
-    def learnVersion(self):
+    def learnVersion(self, pyVersion):
         self.addStep(
             SetProperty,
-            command=[self.python(""), "-Wignore", "setup.py", "--version"],
+            command=[
+                self.python(pyVersion), 
+                # Keep warnings out of the output
+                "-Wignore", 
+                "setup.py", 
+                # Keep extra debug logging out of the output (not
+                # entirely successfully though)
+                "--quiet",
+                # Get the version number, though.
+                "--version"],
             property="version",
             workdir='source')
 
@@ -479,7 +488,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     Build and test a Linux (or Linux-like) PyOpenSSL package.
     """
     def __init__(self, versions, source, platform=None, bdistEnv=None, useTrial=True):
-        PyOpenSSLBuildFactoryBase.__init__(self, useTrial)
+        PyOpenSSLBuildFactoryBase.__init__(self, versions[0], useTrial)
         
         self._platform = platform
         self.bdistEnv = bdistEnv
@@ -581,7 +590,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
 
 
     def __init__(self, platform, compiler, pyVersion, opensslPath, useTrial=False):
-        PyOpenSSLBuildFactoryBase.__init__(self, useTrial)
+        PyOpenSSLBuildFactoryBase.__init__(self, pyVersion, useTrial)
         python = self.python(pyVersion)
         buildCommand = [
             python, "setup.py",

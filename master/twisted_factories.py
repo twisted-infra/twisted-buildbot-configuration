@@ -464,6 +464,8 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
         if self.useTrial:
             self.addStep(
                 Trial,
+                workdir="build/build/lib.%s-%s" % (
+                    self.platform(pyVersion), pyVersion),
                 python=self.python(pyVersion),
                 trial=self.trial(pyVersion),
                 tests="OpenSSL",
@@ -479,6 +481,8 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
         self.addStep(
             ShellCommand,
             timeout=30,
+            workdir="build/build/lib.%s-%s" % (
+                self.platform(pyVersion), pyVersion),
             command=[self.python(pyVersion), "-u", "-c", "import discover; discover.main()", "-v", "OpenSSL/test/"])
 
 
@@ -510,12 +514,14 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 # Try cleaning up what was there before so this is a
                 # reproducable build (clean --all doesn't actually
                 # work so well, but try anyway).  Then build the
-                # extensions in-place and without regard for file
-                # timestamps (which hopefully also increases
-                # reproducability and works around any files the clean
-                # step missed).  Last build a binary distribution for
-                # upload.
-                command=[python, "setup.py", "clean", "--all", "build_ext", "-i", "--force", "bdist"],
+                # extensions without regard for file timestamps (which
+                # hopefully also increases reproducability and works
+                # around any files the clean step missed).  Last build
+                # a binary distribution for upload.  (We don't do this
+                # in-place because we can't do that on Windows and
+                # being inconsistent would make this more
+                # complicated.)
+                command=[python, "setup.py", "clean", "--all", "build_ext", "--force", "bdist"],
                 env=self.bdistEnv,
                 flunkOnFailure=True)
             self.addTestStep(pyVersion)
@@ -594,7 +600,8 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         python = self.python(pyVersion)
         buildCommand = [
             python, "setup.py",
-            "build_ext", "--compiler", compiler, "--with-openssl", opensslPath,
+            "build_ext", "--compiler", compiler,
+            "--with-openssl", opensslPath,
             "build", "bdist", "bdist_wininst"]
         if pyVersion >= "2.5":
             buildCommand.append("bdist_msi")

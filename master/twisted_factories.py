@@ -635,7 +635,9 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             shell.Compile,
             command=[python, "-c",
-                     "import sys, setuptools; sys.argv[0] = 'setup.py'; execfile('setup.py', {'__file__': 'setup.py'})",
+                     "import sys, setuptools; "
+                     "sys.argv[0] = 'setup.py'; "
+                     "exec(open('setup.py').read(), {'__file__': 'setup.py'})",
                      "build_ext", "--with-openssl", opensslPath, "bdist_egg"],
             flunkOnFailure=True)
 

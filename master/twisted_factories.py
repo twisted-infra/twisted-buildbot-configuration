@@ -332,14 +332,21 @@ class InterpreterBuilderMixin:
         python = "../" + python
 
         for basename in projects:
+            # Send the tarball down
+            self.addStep(
+                transfer.FileDownload,
+                mastersrc="dependencies/" + basename + ".tar.gz",
+                slavedest=basename + ".tar.gz",
+                workdir=".")
+
             if "subunit" in basename:
                 # Always trying to be special.
                 self.buildSubunit(python, basename)
             else:
                 self.buildModule(python, basename)
 
-    def buildSubunit(self, python, basename):
-        dirname = basename.split('.tar.gz')[0]
+    def buildSubunit(self, python, dirname):
+        basename = dirname + '.tar.gz'
         self.addStep(
             ShellCommand,
             workdir=".",

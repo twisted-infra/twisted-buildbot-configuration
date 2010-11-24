@@ -6,4 +6,7 @@ Disallow: /buildslaves
 Disallow: /schedulers
 Disallow: /one_line_per_build
 Disallow: /one_box_per_builder
+Disallow: /builders
+Disallow: /grid
+Disallow: /tgrid
 Disallow: /xmlrpc

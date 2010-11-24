@@ -1,5 +1,5 @@
 
-from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class
+from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class, path_to_root
 from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION
 
 from nevow import tags
@@ -35,6 +35,14 @@ class TenBoxesPerBuilder(HtmlResource):
         HtmlResource.__init__(self)
         self.categories = categories
 
+
+    def content(self, req, context):
+        body = self.body(req)
+        context['content'] = body
+        template = req.site.buildbot_service.templates.get_template("empty.html")
+        return template.render(**context)
+
+
     def body(self, req):
         status = self.getStatus(req)
         
@@ -56,12 +64,12 @@ class TenBoxesPerBuilder(HtmlResource):
             builder = status.getBuilder(bn)
             row = tags.tr()
             table[row]
-            builderLink = URL.fromString(self.path_to_root(req) or "./")
+            builderLink = URL.fromString(path_to_root(req) or "./")
             builderLink = builderLink.child("builders").child(bn)
             row[tags.td(class_="box")[tags.a(href=builderLink)[bn]]]
 
-            current_box = ICurrentBox(builder).getBox(status)
-            row[tags.xml(current_box.td(align="center"))]
+            # current_box = ICurrentBox(builder).getBox(status)
+            # row[tags.xml(current_box.td(align="center"))]
 
             builds = list(builder.generateFinishedBuilds(map_branches(branches),
                                                          num_builds=num_builds))

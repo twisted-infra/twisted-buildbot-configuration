@@ -141,7 +141,7 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
             workdir='.',
             slavesrc='./Twisted/apidocs.tar.bz2',
             masterdest=WithProperties(
-                'public_html/builds/apidocs-%(revision)s.tar.bz2'))
+                'public_html/builds/apidocs/apidocs-%(revision)s.tar.bz2'))
 
 
 
@@ -298,7 +298,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
                 transfer.FileUpload,
                 slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.msi'),
                 masterdest=WithProperties(
-                    self.uploadBase + 'Twisted-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
+                    self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
 
         self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
                      haltOnFailure=True)
@@ -306,7 +306,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.exe'),
             masterdest=WithProperties(
-                self.uploadBase + 'Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
 
     def python(self, pyVersion):
         return (
@@ -512,7 +512,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             self.addStep(
                 transfer.FileUpload,
                 slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.tar.gz'),
-                masterdest=WithProperties(self.uploadBase + 'pyOpenSSL-%(version)s.tar.gz'))
+                masterdest=WithProperties(self.uploadBase + 'pyOpenSSL-packages/pyOpenSSL-%(version)s.tar.gz'))
         for pyVersion in versions:
             python = self.python(pyVersion)
             platform = self.platform(pyVersion)
@@ -538,7 +538,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
                 slavesrc=WithProperties(
                     'dist/pyOpenSSL-%(version)s.' + platform + '.tar.gz'),
                 masterdest=WithProperties(
-                    self.uploadBase + '/pyOpenSSL-%(version)s.py' +
+                    self.uploadBase + 'pyOpenSSL-packages/pyOpenSSL-%(version)s.py' +
                     pyVersion + '.' + platform + '.tar.gz'))
 
 
@@ -624,20 +624,20 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
             transfer.FileUpload,
             slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32.zip'),
             masterdest=WithProperties(
-                self.uploadBase + 'pyOpenSSL-%(version)s.' + platform + '-py' + pyVersion + '.zip'))
+                self.uploadBase + 'pyOpenSSL-packages/pyOpenSSL-%(version)s.' + platform + '-py' + pyVersion + '.zip'))
 
         self.addStep(
             transfer.FileUpload,
             slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.exe'),
             masterdest=WithProperties(
-                self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+                self.uploadBase + 'pyOpenSSL-packages/pyOpenSSL-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
 
         if pyVersion >= "2.5":
             self.addStep(
                 transfer.FileUpload,
                 slavesrc=WithProperties('dist/pyOpenSSL-%(version)s.win32-py' + pyVersion + '.msi'),
                 masterdest=WithProperties(
-                    self.uploadBase + 'pyOpenSSL-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
+                    self.uploadBase + 'pyOpenSSL-packages/pyOpenSSL-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
 
         self.addStep(
             shell.Compile,
@@ -652,7 +652,7 @@ class Win32PyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
         self.addStep(
             transfer.FileUpload,
             slavesrc=WithProperties('dist/' + eggName),
-            masterdest=WithProperties(self.uploadBase + eggName))
+            masterdest=WithProperties(self.uploadBase + 'pyOpenSSL-packages/' + eggName))
 
 
     def platform(self, pyVersion):
@@ -704,7 +704,7 @@ class GCoverageFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
-                'public_html/builds/%(project)s-coverage-%%(%(revisionProperty)s)s.tar.gz' % {
+                'public_html/builds/%(project)s-coverage-report/%(project)s-coverage-%%(%(revisionProperty)s)s.tar.gz' % {
                     'project': self.PROJECT,
                     'revisionProperty': self.revisionProperty}))
 

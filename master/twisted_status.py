@@ -62,11 +62,12 @@ class TenBoxesPerBuilder(HtmlResource):
 
         for bn in builders:
             builder = status.getBuilder(bn)
+            state = builder.getState()[0]
             row = tags.tr()
             table[row]
             builderLink = URL.fromString(path_to_root(req) or "./")
             builderLink = builderLink.child("builders").child(bn)
-            row[tags.td(class_="box")[tags.a(href=builderLink)[bn]]]
+            row[tags.td(class_="box %s" % (state,))[tags.a(href=builderLink)[bn]]]
 
             # current_box = ICurrentBox(builder).getBox(status)
             # row[tags.xml(current_box.td(align="center"))]

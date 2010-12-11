@@ -1,6 +1,6 @@
 
 from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class, path_to_root
-from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION
+from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
 
 from nevow import tags
 from nevow.url import URL
@@ -12,6 +12,7 @@ _backgroundColors = {
     FAILURE: "red",
     SKIPPED: "blue",
     EXCEPTION: "purple",
+    RETRY: "purple",
     
     # This is a buildbot bug or something.
     None: "yellow",

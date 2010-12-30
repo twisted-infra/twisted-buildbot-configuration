@@ -782,3 +782,18 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             masterdest=WithProperties('public_html/builds/twisted-coverage.py-r%(revision)s'),
             blocksize=2 ** 16,
             compress='gz')
+
+
+class TwistedBenchmarksFactory(TwistedBaseFactory):
+    def __init__(self, python, source):
+        TwistedBaseFactory.__init__(self, python, source, False)
+
+        self.addStep(
+            shell.ShellCommand,
+            env={'PYTHONPATH': '.'},
+            command=self.python + [
+                "../../../twisted-benchmarks/speedcenter.py",
+                "--duration", "3", "--iterations", "10",
+                "--url", "http://speed.twistedmatrix.com/result/add/"])
+
+                

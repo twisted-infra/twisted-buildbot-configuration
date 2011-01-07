@@ -164,7 +164,7 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             transfer.DirectoryUpload,
             workdir='lore2sphinx/profiles/twisted/build',
             slavesrc='html',
-            masterdest=WithProperties('public_html/builds/sphinx-html-%(got_revision)s'),
+            masterdest=WithProperties('public_html/builds/sphinx-html/sphinx-html-%(got_revision)s'),
             blocksize=2 ** 16,
             compress='gz')
 
@@ -779,7 +779,7 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             transfer.DirectoryUpload,
             workdir='Twisted',
             slavesrc='twisted-coverage',
-            masterdest=WithProperties('public_html/builds/twisted-coverage.py-r%(revision)s'),
+            masterdest=WithProperties('public_html/builds/twisted-coverage.py/twisted-coverage.py-r%(revision)s'),
             blocksize=2 ** 16,
             compress='gz')
 

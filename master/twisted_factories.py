@@ -153,6 +153,11 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             shell.ShellCommand,
             command=['hg', 'clean', '--all', '--exclude', 'lore2sphinx.conf'],
             workdir='lore2sphinx')
+        # Get any updates to lore2sphinx
+        self.addStep(
+            shell.ShellCommand,
+            command=['hg', 'pull', '-u'],
+            workdir='lore2sphinx')
         # Generate the docs anew
         self.addStep(
             shell.ShellCommand,

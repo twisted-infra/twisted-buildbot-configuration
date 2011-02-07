@@ -715,17 +715,19 @@ class GCoverageFactory(TwistedBaseFactory):
 
         # Unarchive it so it can be viewed directly.  WithProperties
         # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
+        prefix = 'public_html/builds/%(project)s-coverage-report/%(project)s-coverage-' % {
+            'project': self.PROJECT}
         self.addStep(
             MasterShellCommand,
             command=[
-                'bash', '-c',
-                ('fname=`echo public_html/builds/%(project)s-coverage-*.tar.gz`; '
-                 'tar xzf $fname; ' +
-                 ('rev=${fname:%s}; ' % (len(self.PROJECT) + 29,)) +
-                 'rev=${rev/%%.tar.gz/}; '
-                 'rm -rf public_html/builds/%(project)s-coverage-report-r$rev; '
-                 'mv coverage-report public_html/builds/%(project)s-coverage-report-r$rev; '
-                 'rm $fname; ') % {'project': self.PROJECT}])
+                'bash', '-x', '-c',
+                'fname=`echo %(prefix)s*.tar.gz`; '
+                'tar xzf $fname; '
+                'rev=${fname:%(prefixlen)d}; '
+                'rev=${rev/%%.tar.gz/}; '
+                'rm -rf %(prefix)sreport-r$rev; '
+                'mv coverage-report %(prefix)sreport-r$rev; '
+                'rm $fname; ' % {'prefix': prefix, 'prefixlen': len(prefix)}])
 
 
 

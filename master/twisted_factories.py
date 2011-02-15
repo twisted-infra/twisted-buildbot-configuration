@@ -8,7 +8,7 @@ from buildbot.process.factory import BuildFactory, s
 from buildbot.scheduler import Scheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.shell import ShellCommand, SetProperty
-from buildbot.steps.source import SVN, Bzr
+from buildbot.steps.source import SVN, Bzr, Mercurial
 from buildbot.steps.python import PyFlakes
 from pypy_steps import Translate
 
@@ -391,10 +391,8 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
     def __init__(self, translationArguments, targetArguments, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
-            SVN,
-            baseURL="http://codespeak.net/svn/pypy/",
-            defaultBranch="trunk",
-            mode="copy")
+            Mercurial,
+            repourl="https://bitbucket.org/pypy/pypy")
         self.addStep(
             Translate,
             translationArgs=translationArguments,

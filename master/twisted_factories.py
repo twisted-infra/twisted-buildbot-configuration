@@ -798,7 +798,7 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
             env={'PYTHONPATH': '.'},
             command=self.python + [
                 "../../../twisted-benchmarks/speedcenter.py",
-                "--duration", "3", "--iterations", "10",
+                "--duration", "3", "--iterations", "30",
                 "--url", "http://speed.twistedmatrix.com/result/add/"])
 
                 

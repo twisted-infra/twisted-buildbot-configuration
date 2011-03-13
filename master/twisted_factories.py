@@ -170,7 +170,7 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             workdir='lore2sphinx/profiles/twisted/build',
             slavesrc='html',
             masterdest=WithProperties(
-                'public_html/builds/sphinx-html/%(build_number)s-%(got_revision)s'),
+                'public_html/builds/sphinx-html/%(buildnumber)s-%(got_revision)s'),
             blocksize=2 ** 16,
             compress='gz')
 

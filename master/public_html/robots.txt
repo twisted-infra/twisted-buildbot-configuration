@@ -10,3 +10,4 @@ Disallow: /builders
 Disallow: /grid
 Disallow: /tgrid
 Disallow: /xmlrpc
+Disallow: /supported

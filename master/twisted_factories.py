@@ -55,9 +55,31 @@ class TwistedBaseFactory(BuildFactory):
 
     forceGarbageCollection = False
 
+    def _fixPermissions(self, source):
+        # Hack for Windows
+        haveChmod = transfer.FileDownload(
+            mastersrc="dependencies/chmod.bat",
+            slavedest="chmod.bat",
+            workdir=".")
+        source.insert(0, haveChmod)
+        # Fix any nasty permissions left over from last time that
+        # might cause the cleanup to fail.
+        fixPermissions = ShellCommand(
+            workdir=".", command=["chmod", "u+rwX", "-f", "-R", "Twisted"])
+        source.insert(0, fixPermissions)
+
+
     def __init__(self, python, source, uncleanWarnings, trialTests=None, trialMode=None):
         if not isinstance(source, list):
             source = [source]
+        else:
+            source = list(source)
+
+        # If permissions get messed up on a slave, this can fix it.
+        # But it breaks on old slaves so it's not enabled all the time
+        # (and it can't fix old slaves, obviously).
+
+        # self._fixPermissions(source)
 
         BuildFactory.__init__(self, source)
 

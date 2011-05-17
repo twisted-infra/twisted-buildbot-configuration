@@ -823,5 +823,3 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
                 "../../../twisted-benchmarks/speedcenter.py",
                 "--duration", "3", "--iterations", "30",
                 "--url", "http://speed.twistedmatrix.com/result/add/"])
-
-                

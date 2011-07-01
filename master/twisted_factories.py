@@ -174,18 +174,21 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
         self.addStep(
             shell.ShellCommand,
             command=['hg', 'clean', '--all', '--exclude', 'lore2sphinx.conf'],
-            workdir='lore2sphinx')
+            workdir='lore2sphinx',
+            haltOnFailure=True)
         # Get any updates to lore2sphinx
         self.addStep(
             shell.ShellCommand,
             command=['hg', 'pull', '-u'],
-            workdir='lore2sphinx')
+            workdir='lore2sphinx',
+            haltOnFailure=True)
         # Generate the docs anew
         self.addStep(
             shell.ShellCommand,
             command=self.python + ['l2s_builder.py'],
             workdir='lore2sphinx',
-            env={'PYTHONPATH': '.'})
+            env={'PYTHONPATH': '.'},
+            haltOnFailure=True)
         # Upload the result
         self.addStep(
             transfer.DirectoryUpload,

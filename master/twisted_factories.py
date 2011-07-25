@@ -788,8 +788,8 @@ class TwistedGCoverageFactory(GCoverageFactory):
 
 class TwistedCoveragePyFactory(TwistedBaseFactory):
     OMIT_PATHS = [
-        '/usr',
-        '_trial_temp',
+        '/usr/*',
+        '_trial_temp/*',
         ]
 
     REPORT_COMMAND = [
@@ -802,7 +802,10 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             shell.Compile,
             command=python + ["setup.py", "build_ext", "-i"],
             flunkOnFailure=True)
-        self.addTrialStep(python=["coverage", "run", "--branch"])
+        self.addTrialStep(python=[
+                "coverage", "run",
+                "--omit", ','.join(self.OMIT_PATHS),
+                "--branch"])
         self.addStep(
             shell.ShellCommand,
             command=self.REPORT_COMMAND)

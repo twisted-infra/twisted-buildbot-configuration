@@ -434,10 +434,10 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
 class TwistedPyPyBuildFactory(BuildFactory):
     def __init__(self, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
-#         self.addStep(
-#             ShellCommand,
-#             workdir="build",
-#             command=["../pypy-c", "setup.py", "build_ext", "-i"])
+        self.addStep(
+            ShellCommand,
+            workdir="build",
+            command=["../pypy-c", "setup.py", "build_ext", "-i"])
 
         # This would include CPython site-packages (which might have
         # extension modules, oh no) and our own little site-packages

@@ -398,9 +398,10 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
     def __init__(self, branch, python, projects, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
-            SVN,
-            baseURL="http://svn.python.org/projects/python/",
+            Mercurial,
+            repourl="http://hg.python.org/cpython",
             defaultBranch=branch,
+            branchType='inrepo',
             mode="copy")
         self.addStep(
             ShellCommand,

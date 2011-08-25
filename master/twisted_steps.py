@@ -891,6 +891,35 @@ class RemovePYCs(ShellCommand):
     descriptionDone = ["remove", "bytecode"]
 
 
+class RemoveTrialTemp(ShellCommand):
+    name = "remove-_trial_temp"
+    description = ["removing", "_trial_temp"]
+    descriptionDone = ["remove", "_trial_temp"]
+
+    source = (
+        "import os, sys, time, shutil\n"
+        "target = os.path.abspath(sys.argv[1])\n"
+        "for i in range(10):\n"
+        "    if os.path.exists(target):\n"
+        "        print 'Attempting to delete', target\n"
+        "        try:\n"
+        "            shutil.rmtree(target, False)\n"
+        "        except Exception, e:\n"
+        "            print 'Failed to delete:', e\n"
+        "            time.sleep(6)\n"
+        "        else:\n"
+        "            print 'Succeeded'\n"
+        "            break\n")
+
+    def __init__(self, python):
+        ShellCommand.__init__(self)
+        self.command = python + [
+            "-c",
+            'exec "%s".decode("hex")' % (self.source.encode('hex'),),
+            "_trial_temp"]
+
+
+
 class CheckDocumentation(ShellCommand):
     """
     Run Pydoctor over the source to check for errors in API

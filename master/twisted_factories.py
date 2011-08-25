@@ -13,8 +13,8 @@ from buildbot.steps.python import PyFlakes
 from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
-    Trial, RemovePYCs, CheckDocumentation, LearnVersion, SetBuildProperty, \
-    MasterShellCommand
+    Trial, RemovePYCs, RemoveTrialTemp, CheckDocumentation, LearnVersion, \
+    SetBuildProperty, MasterShellCommand
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
@@ -271,6 +271,7 @@ class TwistedReactorsBuildFactory(TwistedBaseFactory):
 
         for reactor in reactors:
             self.addStep(RemovePYCs)
+            self.addStep(RemoveTrialTemp, python=self.python)
             self.addTrialStep(
                 name=reactor, reactor=reactor, flunkOnFailure=True,
                 warnOnFailure=False)

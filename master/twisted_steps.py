@@ -907,6 +907,32 @@ class CheckDocumentation(ShellCommand):
     description = ["checking", "api", "docs"]
     descriptionDone = ["api", "docs"]
 
+    invalidReferences = 0
+    unknownFields = 0
+
+    def createSummary(self, log):
+        for line in StringIO.StringIO(log.getText()):
+            if 'invalid ref to' in line:
+                self.invalidReferences += 1
+            elif 'found unknown field on' in line:
+                self.unknownFields += 1
+
+
+    def evaluateCommand(self, cmd):
+        if self.invalidReferences or self.unknownFields:
+            return FAILURE
+        return ShellCommand.evaluateCommand(self, cmd)
+
+
+    def getText(self, cmd, results):
+        if results == FAILURE:
+            return [
+                "api", "docs",
+                "invalid refs=%d" % (self.invalidReferences,),
+                "unknown fields=%d" % (self.unknownFields,)]
+        return ShellCommand.evaluateCommand(self, cmd)
+
+
 
 class LearnVersion(SetProperty):
     """

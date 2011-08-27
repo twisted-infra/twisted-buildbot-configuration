@@ -945,10 +945,49 @@ class CheckDocumentation(ShellCommand):
                 self.invalidReferences += 1
             elif 'found unknown field on' in line:
                 self.unknownFields += 1
+        self.setProperty("invalid references", self.invalidReferences)
+        self.setProperty("unknown fields", self.unknownFields)
+
+
+    def worse(self):
+        lastInvalidReferences, lastUnknownFields = self.getLastResults()
+        return (
+            self.invalidReferences > lastInvalidReferences or
+            self.unknownFields > lastUnknownFields)
+
+
+    def getLastResults(self):
+        status = self.getLastStatus()
+        if status is None:
+            return 0, 0
+        result = (
+            int(status.getProperty("invalid references")),
+            int(status.getProperty("unknown fields")))
+        log.msg("build had values %d, %d" % result)
+        return result
+
+
+    def getLastStatus(self):
+        status = self.build.build_status
+        number = status.getNumber()
+        if number == 0:
+            log.msg("last result is undefined because this is the first build")
+            return 0, 0
+        builder = status.getBuilder()
+        for i in range(1, 11):
+            build = builder.getBuild(number - i)
+            branch = build.getProperty("branch")
+            if branch is None:
+                log.msg("Found build on default branch at %d" % (number - i,))
+                return build
+            else:
+                log.msg("skipping build-%d because it is on branch %r" % (i, branch))
+        log.msg("falling off the end")
+        return 0, 0
 
 
     def evaluateCommand(self, cmd):
-        if self.invalidReferences or self.unknownFields:
+        if self.worse():
             return FAILURE
         return ShellCommand.evaluateCommand(self, cmd)
 

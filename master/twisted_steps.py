@@ -959,7 +959,7 @@ class CheckDocumentation(ShellCommand):
                 "api", "docs",
                 "invalid refs=%d" % (self.invalidReferences,),
                 "unknown fields=%d" % (self.unknownFields,)]
-        return ShellCommand.evaluateCommand(self, cmd)
+        return ShellCommand.getText(self, cmd, results)
 
 
 

@@ -927,7 +927,7 @@ class CheckDocumentation(ShellCommand):
     """
     name = 'api-documentation'
     command = (
-        'python2.5 '
+        'python '
         '~/Projects/pydoctor/trunk/bin/pydoctor '
         '--quiet '
         '--make-html '

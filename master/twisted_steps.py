@@ -936,43 +936,77 @@ class CheckDocumentation(ShellCommand):
     description = ["checking", "api", "docs"]
     descriptionDone = ["api", "docs"]
 
-    invalidReferences = 0
-    unknownFields = 0
+    def createSummary(self, logObj):
+        logText = logObj.getText()
+        self.addCompleteLog('pydoctor errors', logText)
 
-    def createSummary(self, log):
-        for line in StringIO.StringIO(log.getText()):
+        currentErrors = self.computeErrors(logText)
+        previousErrors = self.computeErrors(self.getPreviousLog())
+        newErrors = {}
+
+        for errorType in currentErrors:
+            errors = (
+                currentErrors[errorType] - 
+                previousErrors.get(errorType, set()))
+            log.msg("Found %d new errors of type %s" % (len(errors), errorType))
+            if errors:
+                newErrors[errorType] = errors
+
+        if newErrors:
+            allNewErrors = []
+            for errorType in newErrors:
+                allNewErrors.extend(newErrors[errorType])
+                self.setProperty("new " + errorType, len(newErrors[errorType]))
+            allNewErrors.sort()
+            self.addCompleteLog('new pydoctor errors', '\n'.join(allNewErrors))
+            self.worse = True
+            log.msg("Build is worse with respect to pydoctor errors")
+        else:
+            log.msg("Build is not worse with respect to pydoctor errors")
+            self.worse = False
+
+
+    def computeErrors(self, logText):
+        errors = {}
+        for line in StringIO.StringIO(logText):
+            # Mostly get rid of the trailing \n
+            line = line.strip()
             if 'invalid ref to' in line:
-                self.invalidReferences += 1
+                key = 'invalid ref'
+                # Discard the line number since it's pretty unstable
+                # over time
+                fqpnlineno, rest = line.split(' ', 1)
+                fqpn, lineno = fqpnlineno.split(':')
+                value = '%s: %s' % (fqpn, rest)
             elif 'found unknown field on' in line:
-                self.unknownFields += 1
-        self.setProperty("invalid references", self.invalidReferences)
-        self.setProperty("unknown fields", self.unknownFields)
+                key = 'unknown fields'
+                value = line
+            else:
+                continue
+            errors.setdefault(key, set()).add(value)
+        return errors
 
 
-    def worse(self):
-        lastInvalidReferences, lastUnknownFields = self.getLastResults()
-        return (
-            self.invalidReferences > lastInvalidReferences or
-            self.unknownFields > lastUnknownFields)
+    def getPreviousLog(self):
+        build = self.getLastBuild()
+        if build is None:
+            log.msg("Found no previous build, returning empty pydoctor error log")
+            return ""
+        for logObj in build.getLogs():
+            if logObj.name == 'pydoctor errors':
+                text = logObj.getText()
+                log.msg("Found pydoctor error log, returning %d bytes" % (len(text),))
+                return text
+        log.msg("Did not find pydoctor error log, returning empty pydoctor error log")
+        return ""
 
 
-    def getLastResults(self):
-        status = self.getLastStatus()
-        if status is None:
-            return 0, 0
-        result = (
-            int(status.getProperty("invalid references")),
-            int(status.getProperty("unknown fields")))
-        log.msg("build had values %d, %d" % result)
-        return result
-
-
-    def getLastStatus(self):
+    def getLastBuild(self):
         status = self.build.build_status
         number = status.getNumber()
         if number == 0:
             log.msg("last result is undefined because this is the first build")
-            return 0, 0
+            return None
         builder = status.getBuilder()
         for i in range(1, 11):
             build = builder.getBuild(number - i)
@@ -983,21 +1017,18 @@ class CheckDocumentation(ShellCommand):
             else:
                 log.msg("skipping build-%d because it is on branch %r" % (i, branch))
         log.msg("falling off the end")
-        return 0, 0
+        return None
 
 
     def evaluateCommand(self, cmd):
-        if self.worse():
+        if self.worse:
             return FAILURE
         return ShellCommand.evaluateCommand(self, cmd)
 
 
     def getText(self, cmd, results):
         if results == FAILURE:
-            return [
-                "api", "docs",
-                "invalid refs=%d" % (self.invalidReferences,),
-                "unknown fields=%d" % (self.unknownFields,)]
+            return ["api", "docs"]
         return ShellCommand.getText(self, cmd, results)
 
 

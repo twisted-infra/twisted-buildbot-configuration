@@ -306,7 +306,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 
     uploadBase = 'public_html/builds/'
-    def __init__(self, source, uncleanWarnings, platform, pyVersion):
+    def __init__(self, source, uncleanWarnings, arch, pyVersion):
         python = self.python(pyVersion)
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
         self.addStep(
@@ -328,17 +328,17 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
                          haltOnFailure=True)
             self.addStep(
                 transfer.FileUpload,
-                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.msi'),
+                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.' + arch + '-py' + pyVersion + '.msi'),
                 masterdest=WithProperties(
-                    self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (platform, pyVersion)))
+                    self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (arch, pyVersion)))
 
         self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
                      haltOnFailure=True)
         self.addStep(
             transfer.FileUpload,
-            slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.win32-py' + pyVersion + '.exe'),
+            slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.' + arch + '-py' + pyVersion + '.exe'),
             masterdest=WithProperties(
-                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (platform, pyVersion)))
+                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (arch, pyVersion)))
 
     def python(self, pyVersion):
         return (

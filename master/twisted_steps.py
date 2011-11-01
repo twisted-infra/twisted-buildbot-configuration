@@ -773,7 +773,10 @@ class ReportPythonModuleVersions(ShellCommand):
         normalTemplate = (
             'try: import %(module)s\n'
             'except Exception, e: print "Failed %(label)s: missing %(module)s", str(e)\n'
-            'else: print "found %(label)s, %(version)s =", %(version)s\n')
+            'else:\n'
+            '  try: version = %(version)s\n'
+            '  except Exception, e: print "Failed %(label)s:", str(e)\n'
+            '  else: print "found %(label)s, %(version)s =", version\n')
         checks = '\n'.join([
             normalTemplate % dict(label=label, module=module, version=version)
             for (label, module, version)

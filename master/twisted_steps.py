@@ -933,6 +933,7 @@ class CheckDocumentation(ShellCommand):
         'python '
         '~/Projects/pydoctor/trunk/bin/pydoctor '
         '--quiet '
+        '--introspect-c-modules '
         '--make-html '
         '--system-class pydoctor.twistedmodel.TwistedSystem '
         '--add-package `pwd`/twisted')

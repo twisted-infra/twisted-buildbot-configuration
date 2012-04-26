@@ -153,6 +153,13 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
 
     def __init__(self, source, python="python"):
         TwistedBaseFactory.__init__(self, python, source, False)
+
+        # Build our extensions, in case any API documentation wants to link to
+        # them.
+        self.addStep(
+            shell.Compile,
+            command=[python, "setup.py", "build_ext", "-i"])
+
         self.addStep(CheckDocumentation)
         self.addStep(ProcessDocs)
         self.addStep(

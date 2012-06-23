@@ -423,7 +423,7 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
 
 
 class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
-    def __init__(self, translationArguments, targetArguments, *a, **kw):
+    def __init__(self, translationArguments, targetArguments, projects, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(
             Mercurial,
@@ -435,8 +435,8 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
 
         # Don't try building these yet.  PyPy doesn't quite work well
         # enough.
-        # pypyc = "pypy/translator/goal/pypy-c"
-        # self.buildModules(pypyc)
+        pypyc = "pypy/translator/goal/pypy-c"
+	self.buildModules(pypyc, projects)
 
 
 

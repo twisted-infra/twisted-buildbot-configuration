@@ -453,12 +453,6 @@ class TwistedPyPyBuildFactory(BuildFactory):
             workdir="build",
             command=["../pypy-c", "setup.py", "build_ext", "-i"])
 
-        # This would include CPython site-packages (which might have
-        # extension modules, oh no) and our own little site-packages
-        # which could include PyCrypto and pyOpenSSL.  PyPy doesn't
-        # work that well yet though.
-#         PYTHONPATH = "../site-packages:/usr/lib/python2.6/dist-packages"
-        PYTHONPATH = "/usr/lib/python2.6/dist-packages"
         self.addStep(
             Trial,
             workdir="build",
@@ -466,7 +460,7 @@ class TwistedPyPyBuildFactory(BuildFactory):
             testpath=None,
             trial="bin/trial",
             tests=["twisted"],
-            env={"PATH": "/usr/bin:.", "PYTHONPATH": PYTHONPATH})
+            env={"PATH": "/usr/bin:."})
 
 
 class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):

@@ -354,6 +354,10 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
 
 
 class InterpreterBuilderMixin:
+
+    # Prefix in which to install modules
+    modulePrefix = '../install'
+
     def buildModule(self, python, basename):
         self.addStep(
             ShellCommand,
@@ -364,7 +368,7 @@ class InterpreterBuilderMixin:
         self.addStep(
             ShellCommand,
             workdir="build/" + basename,
-            command=[python, "setup.py", "clean", "install", "--prefix", "../install"])
+            command=[python, "setup.py", "clean", "install", "--prefix", self.modulePrefix])
 
 
     def buildModules(self, python, projects):
@@ -394,7 +398,7 @@ class InterpreterBuilderMixin:
             ShellCommand,
             workdir="build/" + dirname,
             env={"PYTHON": python},
-            command="./configure --prefix=${PWD}/../install")
+            command="./configure --prefix=${PWD}/" + self.modulePrefix)
         self.addStep(
             ShellCommand,
             workdir="build/" + dirname,
@@ -423,6 +427,7 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
 
 
 class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
+    modulePrefix = '../'
     def __init__(self, translationArguments, targetArguments, projects, *a, **kw):
         BuildFactory.__init__(self, *a, **kw)
         self.addStep(

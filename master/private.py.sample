@@ -1,9 +1,9 @@
 # Sample private configuration data.
 # The buildmaster config master.cfg expects to find this on
-# PYTHONPATH, and add '/srv/bb-master/BuildBot/support-master'
+# PYTHONPATH, and adds '/srv/bb-master/BuildBot/support-master'
 # to the path for that reason
 
-# Replace the list of slaves, and generated passwords
+# Replace the list of slaves and generated passwords
 # with the appropriate dictionary of real passwords and
 # email address of contact persons.
 

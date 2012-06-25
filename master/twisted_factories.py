@@ -32,7 +32,11 @@ class TwistedScheduler(Scheduler):
                 return 1
         return 0
 
-
+### WARNING (for buildbot-0.8.6)
+### We use the build step factory repreentation deperecated in 0.8.6 here.
+### Some of the steps in twisted_steps break otherwise, but will
+### work fine with the factory support introduced in 0.8.7. Rather than
+### change the steps, we will just ignore the warnings for now.
 
 class TwistedTrial(Trial):
     tests = "twisted"

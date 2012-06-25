@@ -1,0 +1,59 @@
+# Sample private configuration data.
+# The buildmaster config master.cfg expects to find this on
+# PYTHONPATH, and add '/srv/bb-master/BuildBot/support-master'
+# to the path for that reason
+
+# Replace the list of slaves, and generated passwords
+# with the appropriate dictionary of real passwords and
+# email address of contact persons.
+
+# This is the list of currently configured slaves
+slaves = [
+    'bot-bigdogcloud2',
+    'bot-centos5.7',
+    'bot-centos6',
+    'bot-cube',
+    'bot-cylon-1',
+    'bot-exarkun-1',
+    'bot-exarkun-2',
+    'bot-flumotion-1',
+    'bot-flumotion-2',
+    'bot-glyph-1',
+    'bot-glyph-3',
+    'bot-glyph-5',
+    'bot-glyph-6',
+    'bot-idnar-debian',
+    'bot-idnar-debian64',
+    'bot-lewq-1',
+    'bot-scmikes-winxp32-1',
+    'bot-scmikes-winxp32-2',
+    'bot-scmikes-winxp32-3',
+    'bot-soyt-1',
+    'bot-soyt-2',
+    'bot-soyt-3',
+    'bot-therve-1',
+    'bot-thijs',
+    'bot-thread',
+    'bot-tobias-1',
+    'canonical-ubuntu-12.04',
+    'jv-solaris11-x86',
+    'tomprince-socrates-winxp-1',
+    ]
+
+# Give each slave a default password, 
+# Dictionary of tuples of password and list of emails
+# to notify when slave goes down.
+bot_info = {}
+# Generate slaves with default password and no notification for checkconfig
+for slave in slaves:
+	bot_info[slave]=('passwd',[])
+
+# Password for irc bot
+irc_password=""
+
+# Port, user and password for a SSH manhole
+# Doesn't create a manhole if not present
+#manhole = (0, "username", "bac54fcc_310815ca")
+
+# Password for pb debug port
+debugPassword = "cd3dad27_0f84b396"

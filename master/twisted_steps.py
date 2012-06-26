@@ -1014,6 +1014,8 @@ class CheckDocumentation(ShellCommand):
         builder = status.getBuilder()
         for i in range(1, 11):
             build = builder.getBuild(number - i)
+            if not build:
+                continue
             branch = build.getProperty("branch")
             if branch is None:
                 log.msg("Found build on default branch at %d" % (number - i,))

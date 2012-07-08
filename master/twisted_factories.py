@@ -16,6 +16,8 @@ from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, RemoveTrialTemp, CheckDocumentation, LearnVersion, \
     SetBuildProperty, MasterShellCommand
 
+from twisted_steps import CheckCodesByTwistedChecker
+
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
 FORCEGC_FLAGS = ["--force-gc"]
@@ -838,3 +840,20 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
                 "../../../twisted-benchmarks/speedcenter.py",
                 "--duration", "1", "--iterations", "60",
                 "--url", "http://speed.twistedmatrix.com/result/add/"])
+
+
+class TwistedCheckerBuildFactory(TwistedBaseFactory):
+    treeStableTimer = 5 * 60
+
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(self, python, source, False)
+
+        self.addStep(Bzr(
+            baseURL="lp:twistedchecker",
+            defaultBranch="",
+            mode="update",
+            workdir="twistedchecker",
+            ))
+        self.addStep(CheckCodesByTwistedChecker,
+            env={"PATH": ["../twistedchecker/bin","${PATH}"],
+                 "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})

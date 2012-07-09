@@ -1244,7 +1244,7 @@ class CheckCodesByTwistedChecker(ShellCommand):
             build = builder.getBuild(number - i)
             branch = build.getProperty("branch")
             if not branch:
-                log.msg("Found build on default branch at %d" % (number - i,))
+                log.msg("found build on default branch at %d" % (number - i,))
                 return build
             else:
                 log.msg("skipping build-%d because it is on branch %r" % (number - i, branch))

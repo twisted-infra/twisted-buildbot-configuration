@@ -1183,7 +1183,7 @@ class CheckCodesByTwistedChecker(ShellCommand):
             for modulename in newErrors:
                 allNewErrors.append(self.prefixModuleName + modulename)
                 allNewErrors.extend(newErrors[modulename])
-                self.setProperty("new " + modulename, len(newErrors[modulename]))
+                self.setProperty("new in " + modulename, len(newErrors[modulename]))
 
             self.addCompleteLog('new twistedchecker warnings', '\n'.join(allNewErrors))
             log.msg("Build is worse with respect to twistedchecker warnings")

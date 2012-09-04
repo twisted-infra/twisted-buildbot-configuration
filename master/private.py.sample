@@ -35,7 +35,7 @@ slaves = [
     'bot-thijs',
     'bot-thread',
     'bot-tobias-1',
-    'canonical-ubuntu-12.04',
+    'canonical-ubuntu-12.10',
     'jv-solaris11-x86',
     'tomprince-socrates-winxp-1',
     ]

@@ -841,3 +841,11 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
                 "../../../twisted-benchmarks/speedcenter.py",
                 "--duration", "1", "--iterations", "60",
                 "--url", "http://speed.twistedmatrix.com/result/add/"])
+
+class TwistedPython3Tests(TwistedBaseFactory):
+    def __init__(self, python, source):
+        TwistedBaseFactory.__init__(self, python, source, False)
+
+        self.addStep(
+            shell.ShellCommand,
+            command=self.python + [ "admin/run-python3-tests" ])

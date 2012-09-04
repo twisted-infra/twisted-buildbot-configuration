@@ -1,12 +1,23 @@
 Setup instructions
 ==================
 
-bzr get <twisted-config> ~/Buildbot-0.8.6			## currently lp:~tom.prince/twisted-buildbot-configuration/for-buildbot-0.8.6
-virtualenv ~/Buildbot-0.8.6/virtualenv/
-source ~/Buildbot-0.8.6/virtualenv/bin/activate
-pip install zope.interface==3.8.0				## only required for python < 2.6
-git clone <buildbot-version> ~/Buildbot-0.8.6/buildbot-source	## currently git://github.com/tomprince/buildbot.git#for-twisted-0.8.6
-pip install -e ~/Buildbot-0.8.6/buildbot-source/master
-pip install pycrypto						## For manhole
-pip install nevow
-ln -s ~/private-support-master ~/Buildbot-0.8.6/support-master
+  bzr get <twisted-config> ~/Buildbot-0.8.6			## currently lp:~tom.prince/twisted-buildbot-configuration/for-buildbot-0.8.6
+  virtualenv ~/Buildbot-0.8.6/virtualenv/
+  source ~/Buildbot-0.8.6/virtualenv/bin/activate
+  pip install zope.interface==3.8.0				## only required for python < 2.6
+  git clone <buildbot-version> ~/Buildbot-0.8.6/buildbot-source	## currently git://github.com/tomprince/buildbot.git#for-twisted-0.8.6
+  pip install -e ~/Buildbot-0.8.6/buildbot-source/master
+  pip install pycrypto						## For manhole
+  pip install nevow
+  ln -s ~/private-support-master ~/Buildbot-0.8.6/support-master
+
+Dependencies also need to be put in ~/Buildbot-0.8.6/master/dependencies
+
+Notes
+=====
+- Since sqlite on cube is old, pysqlite2 was installed by hand using
+    python setup.py build_static
+  to get an up-to-date version of sqlite
+- Some provision needs to be made for cleaning out old build artifacts
+
+

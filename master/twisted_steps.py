@@ -772,25 +772,27 @@ class ReportPythonModuleVersions(ShellCommand):
 
 
     def _formatSource(self, moduleInfo, pkg_resources):
+        checks = "from __future__ import print_function\n"
+
         normalTemplate = (
             'try: import %(module)s\n'
-            'except Exception, e: print "Failed %(label)s: missing %(module)s", str(e)\n'
+            'except Exception as e: print( "Failed %(label)s: missing %(module)s", str(e))\n'
             'else:\n'
             '  try: version = %(version)s\n'
-            '  except Exception, e: print "Failed %(label)s:", str(e)\n'
-            '  else: print "found %(label)s, %(version)s =", version\n')
-        checks = '\n'.join([
+            '  except Exception as e: print("Failed %(label)s:", str(e))\n'
+            '  else: print("found %(label)s, %(version)s =", version)\n')
+        checks += '\n'.join([
             normalTemplate % dict(label=label, module=module, version=version)
             for (label, module, version)
             in moduleInfo]) + '\n'
 
         pkgresourcesTemplate = (
             'try: import pkg_resources, %(module)s\n'
-            'except Exception, e: print "Failed %(label)s: missing %(module)s", str(e)\n'
+            'except Exception as e: print("Failed %(label)s: missing %(module)s", str(e))\n'
             'else:\n'
             '\ttry: version = pkg_resources.get_distribution(%(module)r).version\n'
-            '\texcept Exception, e: print "Failed %(label)s:", str(e)\n'
-            '\telse: print "found %(label)s, distribution version =", version\n')
+            '\texcept Exception as e: print("Failed %(label)s:", str(e))\n'
+            '\telse: print("found %(label)s, distribution version =", version)\n')
         checks += '\n'.join([
             pkgresourcesTemplate % dict(label=label, module=module)
             for (label, module)
@@ -799,7 +801,7 @@ class ReportPythonModuleVersions(ShellCommand):
         # Cannot have newlines in this code, or it isn't compatible on
         # both POSIX and Windows.  Also, quotes make things really
         # confusing, so don't have any literal quotes.
-        return 'exec "%s".decode("hex")' % (checks.encode('hex'),)
+        return 'from binascii import unhexlify; exec(unhexlify(b"%s"))' % (checks.encode('hex'),)
 
 
     def start(self):

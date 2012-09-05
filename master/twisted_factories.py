@@ -842,15 +842,9 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
                 "--duration", "1", "--iterations", "60",
                 "--url", "http://speed.twistedmatrix.com/result/add/"])
 
-class TwistedPython3Tests(BuildFactory):
+class TwistedPython3Tests(TwistedBaseFactory):
     def __init__(self, python, source):
-        # We don't use TwistedBaseFactory since ReportPythonModuleVersions doesn't support python3.3 yet.
-        BuildFactory.__init__(self, source)
-
-        if type(python) is str:
-            python = [python]
-
-        self.python = python
+        TwistedBaseFactory.__init__(self, python, source, False)
 
         self.addStep(
             shell.ShellCommand,

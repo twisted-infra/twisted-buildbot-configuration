@@ -94,7 +94,7 @@ class TwistedBaseFactory(BuildFactory):
         self.uncleanWarnings = uncleanWarnings
         self.trialMode = trialMode
         if trialTests is None:
-            trialTests = [WithProperties("%(test-case-name:-twisted)s")]
+            trialTests = [WithProperties("%(test-case-name:~twisted)s")]
         self.trialTests = trialTests
 
         self.addStep(

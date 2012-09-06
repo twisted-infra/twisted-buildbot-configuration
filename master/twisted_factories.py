@@ -7,6 +7,7 @@ from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
 from buildbot.schedulers.basic import SingleBranchScheduler
 from buildbot.steps import shell, transfer
+from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import Bzr, Mercurial
 from buildbot.steps.python import PyFlakes
@@ -14,7 +15,7 @@ from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, RemoveTrialTemp, CheckDocumentation, LearnVersion, \
-    SetBuildProperty, MasterShellCommand
+    SetBuildProperty
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]

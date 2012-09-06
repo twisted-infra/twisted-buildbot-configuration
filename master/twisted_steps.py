@@ -1052,11 +1052,26 @@ class LearnVersion(SetProperty):
         'from %(package)s import __version__; '
         'print __version__; ')
 
+    def _extractVersion(self, rc, stdout, stderr):
+        # FIXME: SetProperty doesn't support using just stdout, so we write our
+        # own extraction function.
+        return {'version': stdout.strip()}
+
     def __init__(self, python, package, **kw):
         SetProperty.__init__(
             self,
+            name="check-%s-version" % package,
+            description="checking %s version" % package,
             command=[python, '-c', self.src % dict(package=package)],
-            property="version", **kw)
+            extract_fn=self._extractVersion, **kw)
+
+        self.package = package
+
+    def getText(self, cmd, results):
+        if 'version' in self.property_changes:
+            return [ "%s version %s" % (self.package, self.property_changes['version']) ]
+        else:
+            SetProperty.getText(self, cmd, results)
 
 
 class SetBuildProperty(BuildStep):

@@ -103,7 +103,7 @@ class TenBoxesPerBuilder(HtmlResource):
 
 class TwistedWebStatus(html.WebStatus):
     def __init__(self, **kwargs):
-        html.WebStatus(self, **kwargs)
+        html.WebStatus.__init__(self, **kwargs)
         self.putChild("boxes-supported", TenBoxesPerBuilder(categories=['supported']))
         self.putChild("boxes-all", TenBoxesPerBuilder(categories=['supported', 'unsupported']))
         self.putChild("boxes-pyopenssl", TenBoxesPerBuilder(categories=['pyopenssl']))

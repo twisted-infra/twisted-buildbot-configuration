@@ -5,7 +5,6 @@ Build classes specific to the Twisted codebase
 from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory, s
-from buildbot.schedulers.basic import SingleBranchScheduler
 from buildbot.steps import shell, transfer
 from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
@@ -23,15 +22,6 @@ FORCEGC_FLAGS = ["--force-gc"]
 
 class TwistedBuild(Build):
     workdir = "Twisted" # twisted's bin/trial expects to live in here
-
-
-
-class TwistedScheduler(SingleBranchScheduler):
-    def fileIsImportant(self, change):
-        for filename in change.files:
-            if not filename.startswith("doc/fun/"):
-                return 1
-        return 0
 
 ### WARNING (for buildbot-0.8.6)
 ### We use the build step factory repreentation deperecated in 0.8.6 here.

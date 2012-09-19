@@ -1,6 +1,8 @@
-
-from buildbot.status.web.base import ICurrentBox, HtmlResource, map_branches, build_get_class, path_to_root
+from buildbot.status.web.base import HtmlResource, map_branches, build_get_class, path_to_root
 from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
+from buildbot.status.web.waterfall import WaterfallStatusResource
+from buildbot.status import html
+from twisted.web.util import Redirect
 
 from nevow import tags
 from nevow.url import URL
@@ -98,3 +100,18 @@ class TenBoxesPerBuilder(HtmlResource):
             else:
                 row[tags.td(class_="LastBuild box")["no build"]]
         return flatten(tag)
+
+class TwistedWebStatus(html.WebStatus):
+    def __init__(self, **kwargs):
+        html.WebStatus(self, **kwargs)
+        self.putChild("boxes-supported", TenBoxesPerBuilder(categories=['supported']))
+        self.putChild("boxes-all", TenBoxesPerBuilder(categories=['supported', 'unsupported']))
+        self.putChild("boxes-pyopenssl", TenBoxesPerBuilder(categories=['pyopenssl']))
+        self.putChild("supported", WaterfallStatusResource(categories=['supported']))
+        self.putChild("waterfall", WaterfallStatusResource(categories=['supported', 'unsupported']))
+        self.putChild("waterfall-pyopenssl", WaterfallStatusResource(categories=['pyopenssl']))
+
+        # These are are expensive, so disable them
+        # http://trac.buildbot.net/ticket/2268
+        self.putChild("grid", Redirect("boxes-supported"))
+        self.putChild("tgrid", Redirect("boxes-supported"))

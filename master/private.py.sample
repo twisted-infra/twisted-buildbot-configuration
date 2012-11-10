@@ -36,6 +36,8 @@ slaves = [
     'bot-thread',
     'bot-tobias-1',
     'canonical-ubuntu-12.10',
+    'fedora-fedora17-x86_64'
+    'fedora-rhel6-x86_64'
     'jv-solaris11-x86',
     'tomprince-socrates-winxp-1',
     ]

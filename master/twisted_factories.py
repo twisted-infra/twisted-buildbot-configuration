@@ -16,6 +16,8 @@ from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, RemoveTrialTemp, CheckDocumentation, LearnVersion, \
     SetBuildProperty
 
+from twisted_steps import CheckCodesByTwistedChecker
+
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
 FORCEGC_FLAGS = ["--force-gc"]
@@ -836,7 +838,20 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
 class TwistedPython3Tests(TwistedBaseFactory):
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
-
         self.addStep(
             shell.ShellCommand,
             command=self.python + [ "admin/run-python3-tests" ])
+
+class TwistedCheckerBuildFactory(TwistedBaseFactory):
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(self, python, source, False)
+
+        self.addStep(Bzr(
+            baseURL="lp:twistedchecker",
+            defaultBranch="",
+            mode="update",
+            workdir="twistedchecker",
+            ))
+        self.addStep(CheckCodesByTwistedChecker,
+            env={"PATH": ["../twistedchecker/bin","${PATH}"],
+                 "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})

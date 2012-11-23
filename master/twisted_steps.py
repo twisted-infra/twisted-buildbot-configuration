@@ -1090,3 +1090,114 @@ class SetBuildProperty(BuildStep):
         self.step_status.setText(['set props:', self.property_name])
         self.addCompleteLog("property changes", "%s: %s" % (self.property_name, value))
         return self.finished(SUCCESS)
+
+
+
+class CheckCodesByTwistedChecker(ShellCommand):
+    """
+    Run TwistedChecker over source codes to check for new warnings
+    involved in the lastest build.
+    """
+    name = 'run-twistedchecker'
+    command = ('twistedchecker twisted')
+    description = ["checking", "codes"]
+    descriptionDone = ["check", "results"]
+    prefixModuleName = "************* Module "
+    regexLineStart = "^[WCEFR]\d{4}\:"
+
+    def createSummary(self, logObj):
+        logText = logObj.getText()
+        self.addCompleteLog('twistedchecker warnings', logText)
+
+        currentErrors = self.computeErrors(logText)
+        previousErrors = self.computeErrors(self.getPreviousLog())
+        newErrors = {}
+
+        for modulename in currentErrors:
+            errors = (
+                currentErrors[modulename] - 
+                previousErrors.get(modulename, set()))
+            log.msg("Found %d new warnings in %s" % (len(errors), modulename))
+            if errors:
+                newErrors[modulename] = errors
+
+        if newErrors:
+            allNewErrors = []
+            for modulename in newErrors:
+                allNewErrors.append(self.prefixModuleName + modulename)
+                allNewErrors.extend(newErrors[modulename])
+                self.setProperty("new in " + modulename, len(newErrors[modulename]))
+
+            self.addCompleteLog('new twistedchecker warnings', '\n'.join(allNewErrors))
+            log.msg("Build is worse with respect to twistedchecker warnings")
+        else:
+            log.msg("Build is not worse with respect to twistedchecker warnings")
+
+
+    def computeErrors(self, logText):
+        warnings = {}
+        currentModule = None
+        warningsCurrentModule = []
+        for line in StringIO.StringIO(logText):
+            # Mostly get rid of the trailing \n
+            line = line.strip("\n")
+            if line.startswith(self.prefixModuleName):
+                # Save results for previous module
+                if currentModule:
+                    warnings[currentModule] = set(warningsCurrentModule)
+                # Initial results for current module
+                moduleName = line.replace(self.prefixModuleName, "")
+                currentModule = moduleName
+                warningsCurrentModule = []
+            elif re.search(self.regexLineStart, line):
+                warningsCurrentModule.append(line)
+            else:
+                if warningsCurrentModule:
+                    warningsCurrentModule[-1] += "\n" + line
+                else:
+                    log.msg("Bad result format for %s" % currentModule)
+        # Save warnings for last module
+        if currentModule:
+            warnings[currentModule] = set(warningsCurrentModule)
+        return warnings
+
+
+    def getPreviousLog(self):
+        build = self.getLastBuild()
+        if build is None:
+            log.msg("Found no previous build, returning empty twistedchecker warning log")
+            return ""
+        for logObj in build.getLogs():
+            if logObj.name == 'twistedchecker warnings':
+                text = logObj.getText()
+                log.msg("Found twistedchecker warning log, returning %d bytes" % (len(text),))
+                return text
+        log.msg("Did not find twistedchecker warning log, returning empty twistedchecker warning log")
+        return ""
+
+
+    def getLastBuild(self):
+        status = self.build.build_status
+        number = status.getNumber()
+        if number == 0:
+            log.msg("last result is undefined because this is the first build")
+            return None
+        builder = status.getBuilder()
+        for i in range(1, 11):
+            build = builder.getBuild(number - i)
+            branch = build.getProperty("branch")
+            if not branch:
+                log.msg("found build on default branch at %d" % (number - i,))
+                return build
+            else:
+                log.msg("skipping build-%d because it is on branch %r" % (number - i, branch))
+        log.msg("falling off the end")
+        return None
+
+
+    def evaluateCommand(self, cmd):
+        return ShellCommand.evaluateCommand(self, cmd)
+
+
+    def getText(self, cmd, results):
+        return ShellCommand.getText(self, cmd, results)

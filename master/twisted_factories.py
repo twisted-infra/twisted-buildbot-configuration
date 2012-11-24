@@ -844,14 +844,17 @@ class TwistedPython3Tests(TwistedBaseFactory):
 
 class TwistedCheckerBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python"):
+        # Add twistedchecker bzr step first, so got_revision is twisted's
+        source = [
+                Bzr(
+                    baseURL="lp:twistedchecker",
+                    defaultBranch="",
+                    mode="update",
+                    workdir="twistedchecker",
+                    )
+                ] + source
         TwistedBaseFactory.__init__(self, python, source, False)
 
-        self.addStep(Bzr(
-            baseURL="lp:twistedchecker",
-            defaultBranch="",
-            mode="update",
-            workdir="twistedchecker",
-            ))
         self.addStep(CheckCodesByTwistedChecker,
             env={"PATH": ["../twistedchecker/bin","${PATH}"],
                  "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})

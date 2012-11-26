@@ -849,6 +849,7 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
                 Bzr(
                     baseURL="lp:twistedchecker",
                     defaultBranch="",
+                    alwaysUseLatest=True,
                     mode="update",
                     workdir="twistedchecker",
                     )

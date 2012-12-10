@@ -1,4 +1,4 @@
-from twisted.python import log
+from twisted.python import log, util
 from buildbot.status.builder import FAILURE
 from buildbot.steps.shell import ShellCommand
 
@@ -140,6 +140,35 @@ class CheckDocumentation(LintStep):
         return ShellCommand.getText(self, cmd, results)
 
 
+class TwistedCheckerError(util.FancyEqMixin, object):
+    regex = re.compile(r"^(?P<type>[WCEFR]\d{4}):(?P<line>\s*\d+),(?P<indent>\d+):(?P<text>)")
+    compareAttributes = ('type', 'text')
+
+    def __init__(self, msg):
+        self.msg = msg
+        m = self.regex.match(msg)
+        if m:
+            d = m.groupdict()
+            self.type = d['type']
+            self.line = d['line']
+            self.indent = d['indent']
+            self.text = d['text']
+        else:
+            self.type = "UXXXX"
+            self.line = "9999"
+            self.indent = "9"
+            self.text = "Unparseable"
+
+    def __hash__(self):
+        return hash((self.type, self.text))
+
+    def __str__(self):
+        return self.msg
+
+    def __repr__(self):
+        return ("<TwistedCheckerError type=%s line=%d indent=%d, text=%r>" %
+            (self.type, int(self.line), int(self.indent), self.text))
+
 
 class CheckCodesByTwistedChecker(LintStep):
     """
@@ -166,7 +195,7 @@ class CheckCodesByTwistedChecker(LintStep):
             if line.startswith(self.prefixModuleName):
                 # Save results for previous module
                 if currentModule:
-                    warnings[currentModule] = set(warningsCurrentModule)
+                    warnings[currentModule] = set(map(TwistedCheckerError, warningsCurrentModule))
                 # Initial results for current module
                 moduleName = line.replace(self.prefixModuleName, "")
                 currentModule = moduleName
@@ -180,7 +209,7 @@ class CheckCodesByTwistedChecker(LintStep):
                     log.msg("Bad result format for %s" % currentModule)
         # Save warnings for last module
         if currentModule:
-            warnings[currentModule] = set(warningsCurrentModule)
+            warnings[currentModule] = set(map(TwistedCheckerError, warningsCurrentModule))
         return warnings
 
 

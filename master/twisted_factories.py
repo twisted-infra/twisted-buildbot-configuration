@@ -13,10 +13,10 @@ from buildbot.steps.python import PyFlakes
 from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
-    Trial, RemovePYCs, RemoveTrialTemp, CheckDocumentation, LearnVersion, \
+    Trial, RemovePYCs, RemoveTrialTemp, LearnVersion, \
     SetBuildProperty
 
-from twisted_steps import CheckCodesByTwistedChecker
+from txbuildbot.lint import CheckDocumentation, CheckCodesByTwistedChecker
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]

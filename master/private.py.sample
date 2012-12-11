@@ -27,7 +27,6 @@ slaves = [
     'bot-scmikes-winxp32-2',
     'bot-scmikes-winxp32-3',
     'bot-therve-1',
-    'bot-thijs',
     'bot-thread',
     'bot-tobias-1',
     'canonical-ubuntu-12.10',

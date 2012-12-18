@@ -306,6 +306,36 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
             env={"PYTHONPATH": "lib"})
 
 
+class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
+    treeStableTimer = 5*60
+
+    def __init__(self, source, uncleanWarnings, python="python",
+                 reactor="epoll", easy_install="easy_install",
+                 dependencies=[]):
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
+
+        setupCommands = [
+            ["rm", "-rf", "install/ve"],
+            ["mkdir", "-p", "install/ve"]
+            ["virtualenv", "--never-download", "install/ve"]]
+
+        for dependency in dependencies:
+            setupCommands.append([easy_install, dependency])
+
+        setupCommands.append([easy_install, "."])
+
+        for command in setupCommands:
+            self.addStep(shell.ShellCommand, command=command,
+                         env={"PATH": "install/ve/bin"},
+                         haltOnFailure=True)
+
+        self.addTrialStep(
+            name=reactor,
+            reactor=reactor, flunkOnFailure=True,
+            warnOnFailure=False, workdir="Twisted/install",
+            env={"PATH": "install/ve/bin"})
+
+
 class TwistedBdistMsiFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 
@@ -420,7 +450,7 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             command=["make", "install"])
         pythonc = "install/bin/" + python
         self.buildModules(pythonc, projects)
-            
+
 
 
 class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
@@ -488,10 +518,10 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
         self.addStep(
             SetProperty,
             command=[
-                self.python(pyVersion), 
+                self.python(pyVersion),
                 # Keep warnings out of the output
-                "-Wignore", 
-                "setup.py", 
+                "-Wignore",
+                "setup.py",
                 # Keep extra debug logging out of the output (not
                 # entirely successfully though)
                 "--quiet",
@@ -534,7 +564,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     def __init__(self, versions, source, platform=None, bdistEnv=None, useTrial=True):
         PyOpenSSLBuildFactoryBase.__init__(self, versions[0], useTrial)
-        
+
         self._platform = platform
         self.bdistEnv = bdistEnv
         if source:
@@ -798,9 +828,9 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
         ]
 
     REPORT_COMMAND = [
-        'coverage', 'html', '-d', 'twisted-coverage', 
+        'coverage', 'html', '-d', 'twisted-coverage',
         '--omit', ','.join(OMIT_PATHS), '-i']
-        
+
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
         self.addStep(

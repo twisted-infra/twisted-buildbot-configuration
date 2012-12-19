@@ -307,33 +307,45 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
 
 class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
-    treeStableTimer = 5*60
-
     def __init__(self, source, uncleanWarnings, python="python",
                  reactor="epoll", easy_install="easy_install",
                  dependencies=[]):
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
 
-        setupCommands = [
-            ["rm", "-rf", "install/ve"],
-            ["mkdir", "-p", "install/ve"],
-            ["virtualenv", "--never-download", "install/ve"]]
+        setupCommands = [{
+                'name': 'create_virtualenv',
+                'description': ['creating', 'virtualenv'],
+                'descriptionDone': ['created', 'virtualenv'],
+                'command': ["virtualenv", "--never-download", "install/ve"],
+                }]
 
         for dependency in dependencies:
-            setupCommands.append([easy_install, dependency])
+            setupCommands.append({
+                'name': 'install_%s' % dependency,
+                'description': ['installing', dependency],
+                'descriptionDone': ['installed', dependency],
+                'command': [easy_install, dependency],
+                })
 
-        setupCommands.append([easy_install, "."])
+        setupCommands.append({
+                'name': 'install_twisted',
+                'description': ['installing', 'twisted'],
+                'descriptionDone': ['installed', 'twisted'],
+                'command': [easy_install, "."]
+                })
 
         for command in setupCommands:
-            self.addStep(shell.ShellCommand, command=command,
-                         env={"PATH": "install/ve/bin"},
-                         haltOnFailure=True)
+            self.addStep(shell.ShellCommand(
+                env={"PATH": ["install/ve/bin", '${PATH}']},
+                haltOnFailure=True,
+                **command
+                ))
 
         self.addTrialStep(
             name=reactor,
             reactor=reactor, flunkOnFailure=True,
             warnOnFailure=False, workdir="Twisted/install",
-            env={"PATH": "install/ve/bin"})
+            env={"PATH": ["install/ve/bin", '${PATH}']})
 
 
 class TwistedBdistMsiFactory(TwistedBaseFactory):

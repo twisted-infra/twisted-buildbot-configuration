@@ -316,7 +316,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
 
         setupCommands = [
             ["rm", "-rf", "install/ve"],
-            ["mkdir", "-p", "install/ve"]
+            ["mkdir", "-p", "install/ve"],
             ["virtualenv", "--never-download", "install/ve"]]
 
         for dependency in dependencies:

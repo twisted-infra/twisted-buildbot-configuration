@@ -10,6 +10,7 @@ from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import Bzr, Mercurial
 from buildbot.steps.python import PyFlakes
+from buildbot.steps.slave import RemoveDirectory
 from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
@@ -307,16 +308,21 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
 
 class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
+    virtualenv = WithProperties('%(workdir)s/venv')
+    virtualenvPath = WithProperties('%(workdir)s/venv/bin')
+
     def __init__(self, source, uncleanWarnings, python="python",
                  reactor="epoll", easy_install="easy_install",
                  dependencies=[]):
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
 
+        self.addStep(RemoveDirectory(self.virtualenv))
+
         setupCommands = [{
                 'name': 'create_virtualenv',
                 'description': ['creating', 'virtualenv'],
                 'descriptionDone': ['created', 'virtualenv'],
-                'command': ["virtualenv", "--never-download", "install/ve"],
+                'command': ["virtualenv", "--never-download", self.virtualenv],
                 }]
 
         for dependency in dependencies:
@@ -336,7 +342,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
 
         for command in setupCommands:
             self.addStep(shell.ShellCommand(
-                env={"PATH": ["install/ve/bin", '${PATH}']},
+                env={"PATH": [self.virtualenvPath, '${PATH}']},
                 haltOnFailure=True,
                 **command
                 ))
@@ -345,7 +351,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
             name=reactor,
             reactor=reactor, flunkOnFailure=True,
             warnOnFailure=False, workdir="Twisted/install",
-            env={"PATH": ["install/ve/bin", '${PATH}']})
+            env={"PATH": [self.virtualenvPath, '${PATH}']})
 
 
 class TwistedBdistMsiFactory(TwistedBaseFactory):

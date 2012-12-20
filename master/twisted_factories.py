@@ -309,7 +309,7 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
 
 class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
     virtualenv = WithProperties('%(workdir)s/venv')
-    virtualenvPath = WithProperties('%(workdir)s/venv/bin')
+    virtualenvPath = WithProperties('%(workdir)s/venv/bin:${PATH}')
 
     def __init__(self, source, uncleanWarnings, python="python",
                  reactor="epoll", easy_install="easy_install",
@@ -342,7 +342,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
 
         for command in setupCommands:
             self.addStep(shell.ShellCommand(
-                env={"PATH": [self.virtualenvPath, '${PATH}']},
+                env={"PATH": self.virtualenvPath},
                 haltOnFailure=True,
                 **command
                 ))
@@ -351,7 +351,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
             name=reactor,
             reactor=reactor, flunkOnFailure=True,
             warnOnFailure=False, workdir=self.virtualenv,
-            env={"PATH": [self.virtualenvPath, '${PATH}']})
+            env={"PATH": self.virtualenvPath})
 
 
 class TwistedBdistMsiFactory(TwistedBaseFactory):

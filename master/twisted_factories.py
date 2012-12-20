@@ -10,6 +10,7 @@ from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import Bzr, Mercurial
 from buildbot.steps.python import PyFlakes
+from buildbot.steps.slave import RemoveDirectory
 from pypy_steps import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
@@ -306,6 +307,53 @@ class TwistedEasyInstallFactory(TwistedBaseFactory):
             env={"PYTHONPATH": "lib"})
 
 
+class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
+    virtualenv = WithProperties('%(workdir)s/venv')
+    virtualenvPath = WithProperties('%(workdir)s/venv/bin')
+
+    def __init__(self, source, uncleanWarnings, python="python",
+                 reactor="epoll", easy_install="easy_install",
+                 dependencies=[]):
+        TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
+
+        self.addStep(RemoveDirectory(self.virtualenv))
+
+        setupCommands = [{
+                'name': 'create_virtualenv',
+                'description': ['creating', 'virtualenv'],
+                'descriptionDone': ['created', 'virtualenv'],
+                'command': ["virtualenv", "--never-download", self.virtualenv],
+                }]
+
+        for dependency in dependencies:
+            setupCommands.append({
+                'name': 'install_%s' % dependency,
+                'description': ['installing', dependency],
+                'descriptionDone': ['installed', dependency],
+                'command': [easy_install, dependency],
+                })
+
+        setupCommands.append({
+                'name': 'install_twisted',
+                'description': ['installing', 'twisted'],
+                'descriptionDone': ['installed', 'twisted'],
+                'command': [easy_install, "."]
+                })
+
+        for command in setupCommands:
+            self.addStep(shell.ShellCommand(
+                env={"PATH": [self.virtualenvPath, '${PATH}']},
+                haltOnFailure=True,
+                **command
+                ))
+
+        self.addTrialStep(
+            name=reactor,
+            reactor=reactor, flunkOnFailure=True,
+            warnOnFailure=False, workdir=self.virtualenv,
+            env={"PATH": [self.virtualenvPath, '${PATH}']})
+
+
 class TwistedBdistMsiFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 
@@ -420,7 +468,7 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             command=["make", "install"])
         pythonc = "install/bin/" + python
         self.buildModules(pythonc, projects)
-            
+
 
 
 class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
@@ -488,10 +536,10 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
         self.addStep(
             SetProperty,
             command=[
-                self.python(pyVersion), 
+                self.python(pyVersion),
                 # Keep warnings out of the output
-                "-Wignore", 
-                "setup.py", 
+                "-Wignore",
+                "setup.py",
                 # Keep extra debug logging out of the output (not
                 # entirely successfully though)
                 "--quiet",
@@ -534,7 +582,7 @@ class LinuxPyOpenSSLBuildFactory(PyOpenSSLBuildFactoryBase):
     """
     def __init__(self, versions, source, platform=None, bdistEnv=None, useTrial=True):
         PyOpenSSLBuildFactoryBase.__init__(self, versions[0], useTrial)
-        
+
         self._platform = platform
         self.bdistEnv = bdistEnv
         if source:
@@ -798,9 +846,9 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
         ]
 
     REPORT_COMMAND = [
-        'coverage', 'html', '-d', 'twisted-coverage', 
+        'coverage', 'html', '-d', 'twisted-coverage',
         '--omit', ','.join(OMIT_PATHS), '-i']
-        
+
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
         self.addStep(

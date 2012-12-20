@@ -350,7 +350,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
         self.addTrialStep(
             name=reactor,
             reactor=reactor, flunkOnFailure=True,
-            warnOnFailure=False, workdir="Twisted/install",
+            warnOnFailure=False, workdir=self.virtualenv,
             env={"PATH": [self.virtualenvPath, '${PATH}']})
 
 

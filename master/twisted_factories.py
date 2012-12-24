@@ -168,7 +168,9 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
             workdir='.',
             slavesrc='./Twisted/apidocs.tar.bz2',
             masterdest=WithProperties(
-                'public_html/builds/apidocs/apidocs-%(revision)s.tar.bz2'))
+                'public_html/builds/apidocs/apidocs-%(got_revision)s.tar.bz2'),
+            url=WithProperties(
+                '/builds/apidocs/apidocs-%(got_revision)t.tar.bz2'))
 
 
 

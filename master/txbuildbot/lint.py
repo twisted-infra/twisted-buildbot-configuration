@@ -131,7 +131,7 @@ class CheckDocumentation(LintStep):
             allNewErrors.extend(newErrors[errorType])
             self.setProperty("new " + errorType, len(newErrors[errorType]))
         allNewErrors.sort()
-        return newErrors
+        return allNewErrors
 
 
     def getText(self, cmd, results):
@@ -219,4 +219,4 @@ class CheckCodesByTwistedChecker(LintStep):
             allNewErrors.append(self.prefixModuleName + modulename)
             allNewErrors.extend(newErrors[modulename])
             self.setProperty("new in " + modulename, len(newErrors[modulename]))
-        return allNewErrors
+        return map(str, allNewErrors)

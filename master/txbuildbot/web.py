@@ -1,12 +1,10 @@
-from buildbot.status.web.base import HtmlResource, map_branches, build_get_class, path_to_root
+from buildbot.status.web.base import HtmlResource, map_branches, build_get_class, path_to_builder, path_to_build
 from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
 from buildbot.status.web.waterfall import WaterfallStatusResource
 from buildbot.status import html
 from twisted.web.util import Redirect
 
-from nevow import tags
-from nevow.url import URL
-from nevow.flat import flatten
+from twisted.web.template import tags, flattenString
 
 _backgroundColors = {
     SUCCESS: "green",
@@ -58,29 +56,27 @@ class TenBoxesPerBuilder(HtmlResource):
         num_builds = int(req.args.get("num_builds", [defaultCount])[0])
 
         tag = tags.div()
-        tag[tags.h2["Latest builds: ", ", ".join(branches)]]
+        tag(tags.h2("Latest builds: ", ", ".join(branches)))
 
         table = tags.table()
-        tag[table]
+        tag(table)
 
         for bn in builders:
             builder = status.getBuilder(bn)
             state = builder.getState()[0]
             row = tags.tr()
-            table[row]
-            builderLink = URL.fromString(path_to_root(req) or "./")
-            builderLink = builderLink.child("builders").child(bn)
-            row[tags.td(class_="box %s" % (state,))[tags.a(href=builderLink)[bn]]]
+            table(row)
+            builderLink = path_to_builder(req, builder)
+            row(tags.td(class_="box %s" % (state,))(tags.a(href=builderLink)(bn)))
 
             # current_box = ICurrentBox(builder).getBox(status)
-            # row[tags.xml(current_box.td(align="center"))]
+            # row(tags.xml(current_box.td(align="center")))
 
             builds = list(builder.generateFinishedBuilds(map_branches(branches),
                                                          num_builds=num_builds))
             if builds:
                 for b in builds:
-                    url = builderLink.child("builds")
-                    url = url.child(b.getNumber())
+                    url = path_to_build(req, b)
                     try:
                         label = b.getProperty("got_revision")
                     except KeyError:
@@ -89,17 +85,16 @@ class TenBoxesPerBuilder(HtmlResource):
                     # buildbot has disgusting bugs.
                     if not label or label == "None" or len(str(label)) > 20:
                         label = "#%d" % b.getNumber()
-                    row[
-                        tags.td(
+                    row(                         tags.td(
                             align="center",
                             bgcolor=_backgroundColors[b.getResults()],
-                            class_=("LastBuild box ", build_get_class(b)))[[
+                            class_=("LastBuild box ", build_get_class(b)))([
                                 (element, tags.br)
                                 for element
-                                in [tags.a(href=url)[label]] + b.getText()]]]
+                                in [tags.a(href=url)(label)] + b.getText()]) )
             else:
-                row[tags.td(class_="LastBuild box")["no build"]]
-        return flatten(tag)
+                row(tags.td(class_="LastBuild box")("no build"))
+        return flattenString(req, tag)
 
 class TwistedWebStatus(html.WebStatus):
     def __init__(self, **kwargs):

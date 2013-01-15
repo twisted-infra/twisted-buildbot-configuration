@@ -3,7 +3,7 @@ from buildbot.status.results import SUCCESS, FAILURE
 from buildbot.test.util.steps import BuildStepMixin
 from buildbot.test.fake.remotecommand import ExpectShell
 
-from txbuildbot.lint import LintStep, CheckDocumentation, CheckCodesByTwistedChecker
+from txbuildbot.lint import LintStep
 
 class FakeLintStep(LintStep):
     name = 'test-lint-step'
@@ -30,7 +30,66 @@ class FakeLintStep(LintStep):
 
 ## TODO: Add tests for getLastBuild/getPreviousLog
 
+class TestComputeDiffference(unittest.TestCase):
+    """
+    Tests for L{LintStep.computeDifference}.
+    """
+
+    
+    def test_emptyPrevious(self):
+        """
+        When given an C{previous} dict that is empty, and a C{current} dict,
+        C{computeDifference} returns a dictionary identical to C{current}.
+        """
+        current = {'stuff': set(['a', 'b']), 'other': set(['x', 'y'])}
+        diff = LintStep.computeDifference(current, {})
+        self.assertEqual(diff, current)
+
+    def test_emptyCurrent(self):
+        """
+        When given an C{current} dict that is empty, and a C{previous} dict,
+        C{computeDifference} returns an empty dict.
+        """
+        previous = {'stuff': set(['a', 'b']), 'other': set(['x', 'y'])}
+        diff = LintStep.computeDifference({}, previous)
+        self.assertEqual(diff, {})
+
+    def test_newKey(self):
+        """
+        When given a C{current} dict that has a key that isn't in C{previous} dict,
+        C{computeDifference} returns a dict with everything in that key.
+        """
+        previous = {'stuff': set(['a', 'b'])}
+        current = {'stuff': set(['a', 'b']), 'other': set(['x', 'y'])}
+        diff = LintStep.computeDifference(current, previous)
+        self.assertEqual(diff, {'other': set(['x', 'y'])})
+
+    def test_lessKeys(self):
+        """
+        When given a C{current} dict that is missing keys from C{previous},
+        C{computeDifference} returns a dict with only the keys from C{current}.
+        """
+        current = {'stuff': set(['a', 'b'])}
+        previous = {'stuff': set(['a']), 'other': set(['x', 'y'])}
+        diff = LintStep.computeDifference(current, previous)
+        self.assertEqual(diff, {'stuff': set(['a'])})
+
+    def test_sameKey(self):
+        """
+        When given a C{current} dict with a key whose contents is identical to C{previous},
+        C{computeDifference} returns a dict without that key.
+        """
+        current = {'stuff': set(['a', 'b'])}
+        previous = {'stuff': set(['a', 'b'])}
+        diff = LintStep.computeDifference(current, previous)
+        self.assertEqual(diff, {})
+
+
+
 class TestLintStep(BuildStepMixin, unittest.TestCase):
+    """
+    Tests for L{LintStep}
+    """
 
     def setUp(self):
         return self.setUpBuildStep()

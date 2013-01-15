@@ -16,15 +16,9 @@ class LintStep(ShellCommand):
 
         currentErrors = self.computeErrors(logText)
         previousErrors = self.computeErrors(self.getPreviousLog())
-        newErrors = {}
 
-        for errorType in currentErrors:
-            errors = (
-                currentErrors[errorType] - 
-                previousErrors.get(errorType, set()))
-            log.msg("Found %d new errors of type %s" % (len(errors), errorType))
-            if errors:
-                newErrors[errorType] = errors
+
+        newErrors = self.computeDifference(currentErrors, previousErrors)
 
         if newErrors:
             allNewErrors = self.formatErrors(newErrors)
@@ -42,6 +36,29 @@ class LintStep(ShellCommand):
     def formatErrors(self, newErrors):
         raise NotImplementedError("Must implement formatErrors for a Lint step")
 
+    @staticmethod
+    def computeDifference(current, previous):
+        """
+        Takes two dicts of sets, and computes the keywise difference.
+
+        @type current: L{dict} of L{set}s
+        @param current: errors from current build
+
+        @type previous: L{dict} of L{set}s
+        @param previous: errors from previous build
+
+        @return
+        @rtype L{dict}
+        """
+        new = {}
+        for errorType in current:
+            errors = (
+                current[errorType] - 
+                previous.get(errorType, set()))
+            log.msg("Found %d new errors of type %s" % (len(errors), errorType))
+            if errors:
+                new[errorType] = errors
+        return new
 
     def getPreviousLog(self):
         build = self.getLastBuild()

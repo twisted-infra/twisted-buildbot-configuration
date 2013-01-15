@@ -1,5 +1,5 @@
 from twisted.trial import unittest
-from buildbot.status.results import SUCCESS
+from buildbot.status.results import SUCCESS, FAILURE
 from buildbot.test.util import sourcesteps
 from buildbot.test.fake.remotecommand import ExpectShell, Expect
 
@@ -138,4 +138,83 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])
         self.expectProperty('got_revision', '9999')
+        return self.runStep()
+
+    def test_checkout_bzrsvn_failPlugins(self):
+        self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True))
+        self.expectCommands(
+                ExpectShell(workdir='wkdir', command=['bzr', 'plugins'])
+                + 1,
+            )
+        self.expectOutcome(result=FAILURE, status_text=['update', 'failed'])
+
+    def test_checkout_bzrsvn_failBzr(self):
+        self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True))
+        self.expectCommands(
+                ExpectShell(workdir='wkdir', command=['bzr', 'plugins'])
+                + ExpectShell.log('stdio', stdout="launchpad 1234\nsvn 2345")
+                + 0,
+                Expect('bzr', dict(workdir='wkdir',
+                                   repourl="/some/bzr/repo/trunk",
+                                   logEnviron=True,
+                                   patch=None,
+                                   env=None,
+                                   forceSharedRepo=True,
+                                   mode='update',
+                                   timeout=20*60,
+                                   retry=None))
+                + 1,
+            )
+        self.expectOutcome(result=FAILURE, status_text=['update', 'failed'])
+        return self.runStep()
+
+    def test_checkout_bzrsvn_failRevert(self):
+        self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True))
+        self.expectCommands(
+                ExpectShell(workdir='wkdir', command=['bzr', 'plugins'])
+                + ExpectShell.log('stdio', stdout="launchpad 1234\nsvn 2345")
+                + 0,
+                Expect('bzr', dict(workdir='wkdir',
+                                   repourl="/some/bzr/repo/trunk",
+                                   logEnviron=True,
+                                   patch=None,
+                                   env=None,
+                                   forceSharedRepo=True,
+                                   mode='update',
+                                   timeout=20*60,
+                                   retry=None))
+                + Expect.update('got_revision', 1234)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['bzr', 'revert', '--no-backup'])
+                + 1,
+            )
+        self.expectOutcome(result=FAILURE, status_text=['update', 'failed'])
+        return self.runStep()
+
+    def test_checkout_bzrsvn_failCleanTree(self):
+        self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True))
+        self.expectCommands(
+                ExpectShell(workdir='wkdir', command=['bzr', 'plugins'])
+                + ExpectShell.log('stdio', stdout="launchpad 1234\nsvn 2345")
+                + 0,
+                Expect('bzr', dict(workdir='wkdir',
+                                   repourl="/some/bzr/repo/trunk",
+                                   logEnviron=True,
+                                   patch=None,
+                                   env=None,
+                                   forceSharedRepo=True,
+                                   mode='update',
+                                   timeout=20*60,
+                                   retry=None))
+                + Expect.update('got_revision', 1234)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['bzr', 'revert', '--no-backup'])
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=["bzr", "clean-tree", "--force", "--ignored", "--detritus"])
+                + 1,
+            )
+        self.expectOutcome(result=FAILURE, status_text=['update', 'failed'])
         return self.runStep()

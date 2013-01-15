@@ -41,7 +41,16 @@ class BzrSvn(Source):
         cmd = buildstep.RemoteCommand('bzr', self.args)
         cmd.useLog(self.stdio_log, False)
         d = self.runCommand(cmd)
-        d.addCallback(lambda _: self.commandComplete(cmd))
+        if not self.has_bzr_svn:
+            # Set got_revision
+            d.addCallback(lambda _: self.commandComplete(cmd))
+        def evaluateCommand(cmd):
+            if cmd.rc != 0:
+                log.msg("Source step failed while running command %s" % cmd)
+                raise buildstep.BuildStepFailed()
+            else:
+                return cmd.rc
+        d.addCallback(lambda _: evaluateCommand(cmd))
         return d
 
     def _revert(self):
@@ -67,6 +76,8 @@ class BzrSvn(Source):
     def finished(self, results):
         if results == SUCCESS:
             self.step_status.setText(['update'])
+        else:
+            self.step_status.setText(['update', 'failed'])
         return Source.finished(self, results)
 
     def startVC(self, branch, revision, patch):

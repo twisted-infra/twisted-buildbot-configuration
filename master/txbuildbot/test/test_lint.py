@@ -4,7 +4,7 @@ from buildbot.test.util.steps import BuildStepMixin
 from buildbot.test.fake.remotecommand import ExpectShell
 
 from txbuildbot.lint import LintStep
-#from txbuildbot.lint import CheckDocumentation, CheckCodesByTwistedChecker
+from txbuildbot.lint import CheckDocumentation, CheckCodesByTwistedChecker
 
 ## TODO: Add tests for getLastBuild/getPreviousLog
 
@@ -107,6 +107,10 @@ class FakeLintStep(LintStep):
     lintChecker = 'test-lint'
 
     def __init__(self, oldErrors, newErrors):
+        """
+        @param oldErrors: errors to return when C{logText} is C{'old'}
+        @param newErrors: errors to return when C{logText} is C{'new'}
+        """
         LintStep.__init__(self)
         self.factory[1].clear()
         self.addFactoryArguments(oldErrors=oldErrors, newErrors=newErrors)
@@ -162,3 +166,127 @@ class TestLintStep(LintStepMixin, unittest.TestCase):
         self.expectOutcome(result=SUCCESS, status_text=['lint', 'done'])
         self.expectLogfile('test-lint errors', 'new')
         return self.runStep()
+
+class PydoctorTests(LintStepMixin, unittest.TestCase):
+    """
+    Tests for L{CheckDocumentation}
+    """
+
+    setUp = LintStepMixin.setUpBuildStep
+    tearDown = LintStepMixin.tearDownBuildStep
+
+    logText = [
+        "twisted.spread.ui.tkutil:0 invalid ref to Tkinter",
+        "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.RemoteCopy",
+        "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.Copyable",
+        "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
+        "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'getpid' 'The implementation ....'>",
+        "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
+        ]
+
+    def test_computeErrors(self):
+        """
+        When L{CheckDocumentation.computeErrors} is called  ...
+        """
+
+        errors = CheckDocumentation.computeErrors("\n".join(self.logText))
+        self.assertEqual(errors, {
+            'invalid ref': set([
+                "twisted.spread.ui.tkutil: invalid ref to Tkinter",
+                "twisted.spread.pb.CopyableFailure: invalid ref to flavors.RemoteCopy",
+                "twisted.spread.pb.CopyableFailure: invalid ref to flavors.Copyable",
+                ]),
+            'unknown fields': set([
+                "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
+                "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'getpid' 'The implementation ....'>",
+                "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
+                ])})
+
+
+    def test_newErrors(self):
+        """
+        """
+
+        self.setupStep(CheckDocumentation(),
+                oldText = "\n".join(self.logText[0:5:2]),
+                newText = "\n".join(self.logText),
+                )
+        self.expectOutcome(result=FAILURE, status_text=['api', 'docs'])
+        self.expectLogfile('pydoctor errors', "\n".join([
+            "twisted.spread.ui.tkutil:0 invalid ref to Tkinter",
+            "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.RemoteCopy",
+            "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.Copyable",
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'getpid' 'The implementation ....'>",
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
+            ]))
+        self.expectLogfile('new pydoctor errors', "\n".join([
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
+            "twisted.spread.pb.CopyableFailure: invalid ref to flavors.RemoteCopy",
+            ]))
+        self.expectProperty('new invalid ref', 1)
+        self.expectProperty('new unknown fields', 2)
+        return self.runStep()
+
+class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
+    """
+    Tests for L{CheckCodesByTwistedChecker}
+    """
+
+    setUp = LintStepMixin.setUpBuildStep
+    tearDown = LintStepMixin.tearDownBuildStep
+
+    logText = [
+        '************* Module twisted.python',
+        'W9002:  1,0: Missing a reference to test module in header',
+        'W9011: 12,0: Blank line contains whitespace',
+        'W9402: 32,0: The first letter of comment should be capitalized',
+        '************* Module twisted.python.util',
+        'C0301: 19,0: Line too long (81/79)',
+        '************* Module twisted.python.threadpool',
+        'W9402:211,0: The first letter of comment should be capitalized',
+        'C0103: 55,8:ThreadPool.__init__: Invalid name "q" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+        'C0103: 88,8:ThreadPool.__setstate__: Invalid name "__dict__" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+        '************* Module twisted.trial._utilpy3',
+        'W9013: 28,0: Expected 3 blank lines, found 2',
+        'W9013: 43,0: Expected 3 blank lines, found 2',
+        'W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves',
+        'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "objects"',
+        'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"',
+        '************* Module twisted.trial.test.test_test_visitor',
+        'W9208:  1,0: Missing docstring',
+        'W9208:  8,0:MockVisitor: Missing docstring',
+        'W9208: 18,0:TestTestVisitor: Missing docstring',
+        ]
+
+    def test_newErrors(self):
+        """
+        """
+
+        self.setupStep(CheckCodesByTwistedChecker(),
+                oldText = "\n".join(self.logText[0:-1:2]),
+                newText = "\n".join(self.logText),
+                )
+        print "\n".join(self.logText[0:-1:2]),
+        self.expectOutcome(result=FAILURE, status_text=['check', 'results', 'failed'])
+        self.expectLogfile('twistedchecker errors', '\n'.join(self.logText))
+        self.expectLogfile('new twistedchecker errors', '\n'.join([
+            '************* Module twisted.python',
+            'W9002:  1,0: Missing a reference to test module in header',
+            'W9402: 32,0: The first letter of comment should be capitalized',
+            '************* Module twisted.trial._utilpy3',
+            'W9013: 28,0: Expected 3 blank lines, found 2',
+            'W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves',
+            'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"',
+            '************* Module twisted.python.threadpool',
+            'W9402:211,0: The first letter of comment should be capitalized',
+            'C0103: 88,8:ThreadPool.__setstate__: Invalid name "__dict__" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+            '************* Module twisted.python.util',
+            'C0301: 19,0: Line too long (81/79)',
+            '************* Module twisted.trial.test.test_test_visitor',
+            'W9208:  1,0: Missing docstring',
+            'W9208: 18,0:TestTestVisitor: Missing docstring',
+            ]))
+        return self.runStep()
+

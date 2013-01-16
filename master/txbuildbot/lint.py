@@ -281,18 +281,16 @@ class CheckCodesByTwistedChecker(LintStep):
         currentErrors = self.computeErrors(newText)
         previousErrors = self.computeErrors(oldText)
 
-        import itertools
-        for toplevel, modules in itertools.groupby(sorted(currentErrors.keys()), lambda k: ".".join(k.split(".")[0:2])):
-            modules = list(modules)
-            self.addCompleteLog("%s %s errors" % (self.lintChecker, toplevel),
-                    '\n'.join(self.formatErrors(dict([(module, currentErrors[module]) for module in modules]))))
-        #self.addCompleteLog('%s errors' % self.lintChecker, '\n'.join(self.formatErrors(currentErrors)))
-        self.formatErrors(previousErrors)
-
         newErrors = self.computeDifference(currentErrors, previousErrors)
 
         if newErrors:
             allNewErrors = self.formatErrors(newErrors)
             self.addCompleteLog('new %s errors' % self.lintChecker, '\n'.join(allNewErrors))
+
+        import itertools
+        for toplevel, modules in itertools.groupby(sorted(currentErrors.keys()), lambda k: ".".join(k.split(".")[0:2])):
+            modules = list(modules)
+            self.addCompleteLog("%s %s errors" % (self.lintChecker, toplevel),
+                    '\n'.join(self.formatErrors(dict([(module, currentErrors[module]) for module in modules]))))
 
         return bool(newErrors)

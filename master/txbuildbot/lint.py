@@ -27,7 +27,8 @@ class LintStep(ShellCommand):
         currentErrors = self.computeErrors(newText)
         previousErrors = self.computeErrors(oldText)
 
-        self.addCompleteLog('%s errors' % self.lintChecker, newText)
+        self.addCompleteLog('%s errors' % self.lintChecker, '\n'.join(self.formatErrors(currentErrors)))
+        self.formatErrors(previousErrors)
 
         newErrors = self.computeDifference(currentErrors, previousErrors)
 
@@ -177,7 +178,6 @@ class CheckDocumentation(LintStep):
         allNewErrors = []
         for errorType in newErrors:
             allNewErrors.extend(newErrors[errorType])
-            self.setProperty("new " + errorType, len(newErrors[errorType]))
         allNewErrors.sort()
         return allNewErrors
 
@@ -189,7 +189,7 @@ class CheckDocumentation(LintStep):
 
 
 class TwistedCheckerError(util.FancyEqMixin, object):
-    regex = re.compile(r"^(?P<type>[WCEFR]\d{4}):(?P<line>\s*\d+),(?P<indent>\d+):(?P<text>)")
+    regex = re.compile(r"^(?P<type>[WCEFR]\d{4}):(?P<line>\s*\d+),(?P<indent>\d+):(?P<text>.*)")
     compareAttributes = ('type', 'text')
 
     def __init__(self, msg):
@@ -206,12 +206,19 @@ class TwistedCheckerError(util.FancyEqMixin, object):
             self.line = "9999"
             self.indent = "9"
             self.text = "Unparseable"
+            log.err(Exception, "unparseable")
 
     def __hash__(self):
         return hash((self.type, self.text))
 
     def __str__(self):
         return self.msg
+
+    def __cmp__(self, other):
+        return cmp(
+                (self.line, self.indent, self.type, self.text),
+                (other.line, other.indent, other.type, other.text),
+                )
 
     def __repr__(self):
         return ("<TwistedCheckerError type=%s line=%d indent=%d, text=%r>" %
@@ -233,22 +240,23 @@ class CheckCodesByTwistedChecker(LintStep):
     lintChecker = 'twistedchecker'
 
 
-    def computeErrors(self, logText):
+    @classmethod
+    def computeErrors(cls, logText):
         warnings = {}
         currentModule = None
         warningsCurrentModule = []
         for line in StringIO.StringIO(logText):
             # Mostly get rid of the trailing \n
             line = line.strip("\n")
-            if line.startswith(self.prefixModuleName):
+            if line.startswith(cls.prefixModuleName):
                 # Save results for previous module
                 if currentModule:
                     warnings[currentModule] = set(map(TwistedCheckerError, warningsCurrentModule))
                 # Initial results for current module
-                moduleName = line.replace(self.prefixModuleName, "")
+                moduleName = line.replace(cls.prefixModuleName, "")
                 currentModule = moduleName
                 warningsCurrentModule = []
-            elif re.search(self.regexLineStart, line):
+            elif re.search(cls.regexLineStart, line):
                 warningsCurrentModule.append(line)
             else:
                 if warningsCurrentModule:
@@ -261,10 +269,30 @@ class CheckCodesByTwistedChecker(LintStep):
         return warnings
 
 
-    def formatErrors(self, newErrors):
+    @classmethod
+    def formatErrors(cls, newErrors):
         allNewErrors = []
-        for modulename in newErrors:
-            allNewErrors.append(self.prefixModuleName + modulename)
-            allNewErrors.extend(newErrors[modulename])
-            self.setProperty("new in " + modulename, len(newErrors[modulename]))
+        for modulename in sorted(newErrors.keys()):
+            allNewErrors.append(cls.prefixModuleName + modulename)
+            allNewErrors.extend(sorted(newErrors[modulename]))
         return map(str, allNewErrors)
+
+    def processLogs(self, oldText, newText):
+        currentErrors = self.computeErrors(newText)
+        previousErrors = self.computeErrors(oldText)
+
+        import itertools
+        for toplevel, modules in itertools.groupby(sorted(currentErrors.keys()), lambda k: ".".join(k.split(".")[0:2])):
+            modules = list(modules)
+            self.addCompleteLog("%s %s errors" % (self.lintChecker, toplevel),
+                    '\n'.join(self.formatErrors(dict([(module, currentErrors[module]) for module in modules]))))
+        #self.addCompleteLog('%s errors' % self.lintChecker, '\n'.join(self.formatErrors(currentErrors)))
+        self.formatErrors(previousErrors)
+
+        newErrors = self.computeDifference(currentErrors, previousErrors)
+
+        if newErrors:
+            allNewErrors = self.formatErrors(newErrors)
+            self.addCompleteLog('new %s errors' % self.lintChecker, '\n'.join(allNewErrors))
+
+        return bool(newErrors)

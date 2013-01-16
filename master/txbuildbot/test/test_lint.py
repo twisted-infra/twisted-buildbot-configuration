@@ -143,7 +143,7 @@ class TestLintStep(LintStepMixin, unittest.TestCase):
             oldErrors={'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])},
             newErrors={'old': set(['a', 'b']), 'new': set(['a', 'b', 'c'])}))
         self.expectOutcome(result=FAILURE, status_text=['lint', 'done', 'failed'])
-        self.expectLogfile('test-lint errors', 'new')
+        self.expectLogfile('test-lint errors', '%r' % {'old': set(['a', 'b']), 'new': set(['a', 'b', 'c'])})
         self.expectLogfile('new test-lint errors', '%r' % {'new': set(['c'])})
         return self.runStep()
 
@@ -154,7 +154,7 @@ class TestLintStep(LintStepMixin, unittest.TestCase):
             oldErrors={'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])},
             newErrors={'old': set(['a', 'b']), 'new': set(['a', 'b'])}))
         self.expectOutcome(result=SUCCESS, status_text=['lint', 'done'])
-        self.expectLogfile('test-lint errors', 'new')
+        self.expectLogfile('test-lint errors', '%r' % {'old': set(['a', 'b']), 'new': set(['a', 'b'])})
         return self.runStep()
 
     def test_sameErrors(self):
@@ -164,7 +164,7 @@ class TestLintStep(LintStepMixin, unittest.TestCase):
             oldErrors={'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])},
             newErrors={'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])}))
         self.expectOutcome(result=SUCCESS, status_text=['lint', 'done'])
-        self.expectLogfile('test-lint errors', 'new')
+        self.expectLogfile('test-lint errors', '%r' % {'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])}) 
         return self.runStep()
 
 class PydoctorTests(LintStepMixin, unittest.TestCase):
@@ -213,20 +213,18 @@ class PydoctorTests(LintStepMixin, unittest.TestCase):
                 )
         self.expectOutcome(result=FAILURE, status_text=['api', 'docs'])
         self.expectLogfile('pydoctor errors', "\n".join([
-            "twisted.spread.ui.tkutil:0 invalid ref to Tkinter",
-            "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.RemoteCopy",
-            "twisted.spread.pb.CopyableFailure:404 invalid ref to flavors.Copyable",
-            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'getpid' 'The implementation ....'>",
+            "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
+            "twisted.spread.pb.CopyableFailure: invalid ref to flavors.Copyable",
+            "twisted.spread.pb.CopyableFailure: invalid ref to flavors.RemoteCopy",
+            "twisted.spread.ui.tkutil: invalid ref to Tkinter",
             ]))
         self.expectLogfile('new pydoctor errors', "\n".join([
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'openfile' 'The implementation ....'>",
             "twisted.spread.pb.CopyableFailure: invalid ref to flavors.RemoteCopy",
             ]))
-        self.expectProperty('new invalid ref', 1)
-        self.expectProperty('new unknown fields', 2)
         return self.runStep()
 
 class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
@@ -260,6 +258,36 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
         'W9208: 18,0:TestTestVisitor: Missing docstring',
         ]
 
+    def test_coputeErrors(self):
+        errors = CheckCodesByTwistedChecker.computeErrors("\n".join(self.logText))
+        from txbuildbot.lint import TwistedCheckerError
+        self.assertEqual(errors, {
+            'twisted.python': set([
+                TwistedCheckerError('W9002:  1,0: Missing a reference to test module in header'),
+                TwistedCheckerError('W9011: 12,0: Blank line contains whitespace'),
+                TwistedCheckerError('W9402: 32,0: The first letter of comment should be capitalized'),
+                ]),
+            'twisted.python.util': set([
+                TwistedCheckerError('C0301: 19,0: Line too long (81/79)'),
+                ]),
+            'twisted.python.threadpool': set([
+                TwistedCheckerError('W9402:211,0: The first letter of comment should be capitalized'),
+                TwistedCheckerError('C0103: 55,8:ThreadPool.__init__: Invalid name "q" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)'),
+                TwistedCheckerError('C0103: 88,8:ThreadPool.__setstate__: Invalid name "__dict__" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)'),
+                ]),
+            'twisted.trial._utilpy3': set([
+                TwistedCheckerError('W9013: 28,0: Expected 3 blank lines, found 2'),
+                TwistedCheckerError('W9013: 43,0: Expected 3 blank lines, found 2'),
+                TwistedCheckerError('W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves'),
+                TwistedCheckerError('W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "objects"'),
+                TwistedCheckerError('W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"'),
+                ]),
+            'twisted.trial.test.test_test_visitor': set([
+                TwistedCheckerError('W9208:  1,0: Missing docstring'),
+                TwistedCheckerError('W9208:  8,0:MockVisitor: Missing docstring'),
+                TwistedCheckerError('W9208: 18,0:TestTestVisitor: Missing docstring'),
+                ])})
+
     def test_newErrors(self):
         """
         """
@@ -268,22 +296,44 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
                 oldText = "\n".join(self.logText[0:-1:2]),
                 newText = "\n".join(self.logText),
                 )
-        print "\n".join(self.logText[0:-1:2]),
         self.expectOutcome(result=FAILURE, status_text=['check', 'results', 'failed'])
-        self.expectLogfile('twistedchecker errors', '\n'.join(self.logText))
+        self.expectLogfile('twistedchecker twisted.python errors', '\n'.join([
+            '************* Module twisted.python',
+            'W9002:  1,0: Missing a reference to test module in header',
+            'W9011: 12,0: Blank line contains whitespace',
+            'W9402: 32,0: The first letter of comment should be capitalized',
+            '************* Module twisted.python.threadpool',
+            'C0103: 55,8:ThreadPool.__init__: Invalid name "q" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+            'C0103: 88,8:ThreadPool.__setstate__: Invalid name "__dict__" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+            'W9402:211,0: The first letter of comment should be capitalized',
+            '************* Module twisted.python.util',
+            'C0301: 19,0: Line too long (81/79)',
+            ]))
+        self.expectLogfile('twistedchecker twisted.trial errors', '\n'.join([
+            '************* Module twisted.trial._utilpy3',
+            'W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves',
+            'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"',
+            'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "objects"',
+            'W9013: 28,0: Expected 3 blank lines, found 2',
+        #    'W9013: 43,0: Expected 3 blank lines, found 2',
+            '************* Module twisted.trial.test.test_test_visitor',
+            'W9208:  1,0: Missing docstring',
+            'W9208:  8,0:MockVisitor: Missing docstring',
+            'W9208: 18,0:TestTestVisitor: Missing docstring',
+            ]))
         self.expectLogfile('new twistedchecker errors', '\n'.join([
             '************* Module twisted.python',
             'W9002:  1,0: Missing a reference to test module in header',
             'W9402: 32,0: The first letter of comment should be capitalized',
-            '************* Module twisted.trial._utilpy3',
-            'W9013: 28,0: Expected 3 blank lines, found 2',
-            'W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves',
-            'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"',
             '************* Module twisted.python.threadpool',
-            'W9402:211,0: The first letter of comment should be capitalized',
             'C0103: 88,8:ThreadPool.__setstate__: Invalid name "__dict__" (should match ((([a-z_])|([a-z]+_[a-z]))[a-zA-Z0-9]+)$)',
+            'W9402:211,0: The first letter of comment should be capitalized',
             '************* Module twisted.python.util',
             'C0301: 19,0: Line too long (81/79)',
+            '************* Module twisted.trial._utilpy3',
+            'W9201: 17,0:acquireAttribute: The opening/closing of docstring should be on a line by themselves',
+            'W9202: 17,0:acquireAttribute: Missing epytext markup @param for argument "attr"',
+        #   'W9013: 28,0: Expected 3 blank lines, found 2',
             '************* Module twisted.trial.test.test_test_visitor',
             'W9208:  1,0: Missing docstring',
             'W9208: 18,0:TestTestVisitor: Missing docstring',

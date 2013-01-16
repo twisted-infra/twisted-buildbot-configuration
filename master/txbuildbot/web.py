@@ -43,7 +43,7 @@ class TenBoxesPerBuilder(HtmlResource):
         body = yield self.body(req)
         context['content'] = body
         template = req.site.buildbot_service.templates.get_template("empty.html")
-        return template.render(**context)
+        defer.returnValue(template.render(**context))
 
 
     def body(self, req):

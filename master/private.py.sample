@@ -61,4 +61,4 @@ debugPassword = "cd3dad27_0f84b396"
 # web status options
 # - default for testing deployments: port 8080 on localhost
 # - deployed version uses distrib_port at ~/webstatus.twistd-web-pb
-webOptions = { 'httpPort': 'tcp:port=8080:interface=127.0.0.1' }
+webOptions = { 'http_port': 'tcp:port=8080:interface=127.0.0.1' }

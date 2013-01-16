@@ -3,6 +3,7 @@ from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTI
 from buildbot.status.web.waterfall import WaterfallStatusResource
 from buildbot.status import html
 from twisted.web.util import Redirect
+from twisted.internet import defer
 
 from twisted.web.template import tags, flattenString
 
@@ -37,8 +38,9 @@ class TenBoxesPerBuilder(HtmlResource):
         self.categories = categories
 
 
+    @defer.inlineCallbacks
     def content(self, req, context):
-        body = self.body(req)
+        body = yield self.body(req)
         context['content'] = body
         template = req.site.buildbot_service.templates.get_template("empty.html")
         return template.render(**context)

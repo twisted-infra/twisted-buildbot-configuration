@@ -20,22 +20,22 @@ class LintStep(ShellCommand):
 
     def createSummary(self, logObj):
         logText = logObj.getText()
-        self.addCompleteLog('%s errors' % self.lintChecker, logText)
+        self.worse = self.processLogs(self.getPreviousLog(), logText)
 
-        currentErrors = self.computeErrors(logText)
-        previousErrors = self.computeErrors(self.getPreviousLog())
 
+    def processLogs(self, oldText, newText):
+        currentErrors = self.computeErrors(newText)
+        previousErrors = self.computeErrors(oldText)
+
+        self.addCompleteLog('%s errors' % self.lintChecker, newText)
 
         newErrors = self.computeDifference(currentErrors, previousErrors)
 
         if newErrors:
             allNewErrors = self.formatErrors(newErrors)
             self.addCompleteLog('new %s errors' % self.lintChecker, '\n'.join(allNewErrors))
-            self.worse = True
-            log.msg("Build is worse with respect to %s errors" % self.lintChecker)
-        else:
-            log.msg("Build is not worse with respect to %s errors" % self.lintChecker)
-            self.worse = False
+
+        return bool(newErrors)
 
 
     def computeErrors(self, logText):

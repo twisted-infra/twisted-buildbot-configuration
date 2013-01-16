@@ -1,6 +1,7 @@
 from twisted.python import log, util
 from buildbot.status.builder import FAILURE
 from buildbot.steps.shell import ShellCommand
+from buildbot.process.properties import Property
 
 try:
     import cStringIO
@@ -176,7 +177,7 @@ class CheckCodesByTwistedChecker(LintStep):
     involved in the lastest build.
     """
     name = 'run-twistedchecker'
-    command = ('twistedchecker twisted')
+    command = ['twistedchecker', Property('test-case-name', default='twisted')]
     description = ["checking", "codes"]
     descriptionDone = ["check", "results"]
     prefixModuleName = "************* Module "

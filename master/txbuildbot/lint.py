@@ -92,7 +92,7 @@ class LintStep(ShellCommand):
             log.msg("Found no previous build, returning empty error log")
             return ""
         for logObj in build.getLogs():
-            if logObj.name == 'stdio':
+            if logObj.step.name == self.name and logObj.name == 'stdio':
                 text = logObj.getText()
                 log.msg("Found error log, returning %d bytes" % (len(text),))
                 return text

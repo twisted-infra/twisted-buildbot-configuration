@@ -492,24 +492,6 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
 
 
 
-class TwistedPyPyBuildFactory(BuildFactory):
-    def __init__(self, *a, **kw):
-        BuildFactory.__init__(self, *a, **kw)
-        self.addStep(
-            ShellCommand,
-            workdir="build",
-            command=["../pypy-c", "setup.py", "build_ext", "-i"])
-
-        self.addStep(
-            Trial,
-            workdir="build",
-            python=["../pypy-c"],
-            testpath=None,
-            trial="bin/trial",
-            tests=["twisted"],
-            env={"PATH": "/usr/bin:."})
-
-
 class TwistedIronPythonBuildFactory(FullTwistedBuildFactory):
     def __init__(self, source, *a, **kw):
         FullTwistedBuildFactory.__init__(

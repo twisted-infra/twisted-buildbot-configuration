@@ -761,6 +761,11 @@ class ReportPythonModuleVersions(ShellCommand):
         the name of a distribution which pkg_resources may be able to
         find and report the version of.
     """
+
+    name = "report-module-versions"
+    description = ["check", "module", "versions"]
+    descriptionDone = ["module", "versions"]
+
     def __init__(self, python, moduleInfo, pkg_resources, **kwargs):
         ShellCommand.__init__(self, **kwargs)
         self._python = python

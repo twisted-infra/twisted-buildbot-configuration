@@ -116,15 +116,15 @@ class LintStep(ShellCommand):
         targetRevision = self.getProperty('branch_revision')
         log.msg(format='Looking for build of r%(revision)s', revision=targetRevision)
         count = 0
-        while count < 30 and number > 0:
+        while count < 40 and number > 0:
             number -= 1
-            count += 1
             build = builder.getBuild(number)
             if not build:
                 continue
             branch = build.getProperty("branch")
             revision = build.getProperty('got_revision')
             if not branch:
+                count += 1
                 if revision == targetRevision:
                     log.msg(format="Found build %(number)d of trunk at r%(revision)s",
                             number=number, revision=revision)
@@ -135,7 +135,7 @@ class LintStep(ShellCommand):
             else:
                 log.msg(format="skipping build %(number)d of branch %(branch)r at r%(revision)s",
                         number=number, revision=revision, branch=branch)
-        log.msg(format="falling off the end after searching %(count) builds",
+        log.msg(format="falling off the end after searching %(count)d builds",
                 count=status.getNumber() - number)
         return None
 

@@ -114,7 +114,7 @@ class LintStep(ShellCommand):
             return None
         builder = status.getBuilder()
         targetRevision = self.getProperty('branch_revision')
-        log.msg(format='Looking for build of r%(revision)', revision=targetRevision)
+        log.msg(format='Looking for build of r%(revision)s', revision=targetRevision)
         count = 0
         while count < 30 and number > 0:
             number -= 1

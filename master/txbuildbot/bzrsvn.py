@@ -60,18 +60,18 @@ class BzrSvn(Source):
         return self._dovccmd(['clean-tree', '--force', '--ignored', '--detritus'])
 
     _revno_re = re.compile("^svn-revno: ([0-9]*)$", re.MULTILINE)
-    def _maybeGetSvnRevision(self):
+    def _maybeGetSvnRevision(self, prop, revspec=None):
         if self.has_bzr_svn:
-            d = self._dovccmd(['version-info'], collectStdout=True)
+            command = ['version-info']
+            if revspec:
+                command += ['-r', revspec]
+            d = self._dovccmd(command, collectStdout=True)
             @d.addCallback
             def _extractRevno(stdout):
                 match = self._revno_re.search(stdout)
                 if match:
-                    self.setProperty("got_revision", match.group(1), "source")
-                return SUCCESS
+                    self.setProperty(prop, match.group(1), "source")
             return d
-        else:
-            return SUCCESS
 
     def finished(self, results):
         if results == SUCCESS:
@@ -86,7 +86,14 @@ class BzrSvn(Source):
         d.addCallback(lambda _: self._update(branch, revision, patch))
         d.addCallback(lambda _: self._revert())
         d.addCallback(lambda _: self._cleanTree())
-        d.addCallback(lambda _: self._maybeGetSvnRevision())
+        d.addCallback(lambda _: self._maybeGetSvnRevision('got_revision'))
+        if branch != 'trunk':
+            revspec = 'ancestor:%s' % (self.baseURL + 'trunk',)
+        else:
+            revspec = 'before:'
+        d.addCallback(lambda _: self._maybeGetSvnRevision('branch_revision', revspec))
+            
+        d.addCallback(lambda _: SUCCESS)
         d.addCallbacks(self.finished, self.checkDisconnect)
         d.addErrback(self.failed)
         return d

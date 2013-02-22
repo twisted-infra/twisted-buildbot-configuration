@@ -89,7 +89,10 @@ class BzrSvn(Source):
         d.addCallback(lambda _: self._maybeGetSvnRevision('got_revision'))
         if branch != 'trunk':
             revspec = 'ancestor:%s' % (self.baseURL + branch,)
-            d.addCallback(lambda _: self._maybeGetSvnRevision('branch_revision', revspec))
+        else:
+            revspec = 'before:'
+        d.addCallback(lambda _: self._maybeGetSvnRevision('branch_revision', revspec))
+            
         d.addCallback(lambda _: SUCCESS)
         d.addCallbacks(self.finished, self.checkDisconnect)
         d.addErrback(self.failed)

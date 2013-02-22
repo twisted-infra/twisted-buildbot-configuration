@@ -99,10 +99,15 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 ExpectShell(workdir='wkdir',
                             command=['bzr', 'version-info'])
                 + Expect.log('stdio', stdout='svn-revno: 9999')
-                + 0
+                + 0,
+                ExpectShell(workdir='wkdir',
+                    command=['bzr', 'version-info', '-r', 'before:'])
+                + Expect.log('stdio', stdout='svn-revno: 9888')
+                + 0,
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])
         self.expectProperty('got_revision', '9999')
+        self.expectProperty('branch_revision', '9888')
         return self.runStep()
 
     def test_checkout_bzrsvn_branch(self):
@@ -173,10 +178,15 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 ExpectShell(workdir='wkdir',
                             command=['bzr', 'version-info'])
                 + Expect.log('stdio', stdout='svn-revno: 9999')
-                + 0
+                + 0,
+                ExpectShell(workdir='wkdir',
+                    command=['bzr', 'version-info', '-r', 'before:'])
+                + Expect.log('stdio', stdout='svn-revno: 9888')
+                + 0,
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])
         self.expectProperty('got_revision', '9999')
+        self.expectProperty('branch_revision', '9888')
         return self.runStep()
 
     def test_checkout_bzrsvn_failPlugins(self):

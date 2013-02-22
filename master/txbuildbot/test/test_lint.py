@@ -69,7 +69,7 @@ class LintStepMixin(BuildStepMixin):
     Mixin for creating a step that succeeds, and returns appropriate old and new lint text.
     """
 
-    def setupStep(self, step, oldText='old', newText='new'):
+    def setupStep(self, step, command=None, oldText='old', newText='new'):
         """
         Initializes L{BuildStepMixin} with the provided step, and sets the command to
         expect a single shell command, and 
@@ -88,7 +88,7 @@ class LintStepMixin(BuildStepMixin):
         BuildStepMixin.setupStep(self, step)
         self.step.getPreviousLog = lambda: oldText
         self.expectCommands(
-                ExpectShell(command=step.__class__.command, workdir='wkdir', usePTY='slave-config')
+                ExpectShell(command=command or step.__class__.command, workdir='wkdir', usePTY='slave-config')
                 + ExpectShell.log('stdio', stdout=newText)
                 + 0
         )
@@ -292,7 +292,7 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
         """
         """
 
-        self.setupStep(CheckCodesByTwistedChecker(),
+        self.setupStep(CheckCodesByTwistedChecker(), command=['twistedchecker', 'twisted'],
                 oldText = "\n".join(self.logText[0:-1:2]),
                 newText = "\n".join(self.logText),
                 )

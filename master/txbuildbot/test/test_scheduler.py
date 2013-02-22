@@ -1,8 +1,11 @@
 from twisted.trial import unittest
 
 from txbuildbot.scheduler import TwistedScheduler
+from buildbot.test.util.scheduler import SchedulerMixin
 
-class TestTwistedScheduler(unittest.TestCase):
+class TestTwistedScheduler(unittest.TestCase, SchedulerMixin):
+
+    OBJECTID = 99
 
     def makeScheduler(self, name='testsched', builderNames=['test_builder']):
         return self.attachScheduler(TwistedScheduler(name=name, builderNames=builderNames, branch='trunk'), self.OBJECTID)

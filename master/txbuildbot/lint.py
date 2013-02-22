@@ -112,10 +112,13 @@ class LintStep(ShellCommand):
         if number == 0:
             log.msg("last result is undefined because this is the first build")
             return None
+
         builder = status.getBuilder()
         targetRevision = self.getProperty('branch_revision')
         log.msg(format='Looking for build of r%(revision)s', revision=targetRevision)
+
         count = 0
+        lastTrunkBuild = None
         while count < 40 and number > 0:
             number -= 1
             build = builder.getBuild(number)
@@ -132,11 +135,18 @@ class LintStep(ShellCommand):
                 else:
                     log.msg(format="skipping build %(number)d of trunk at r%(revision)s",
                             number=number, revision=revision)
+                    if not lastTrunkBuild or (revision and (lastTrunkBuild[0] > max(int(revision), int(targetRevision)))):
+                        lastTrunkBuild = (int(revision), build)
             else:
                 log.msg(format="skipping build %(number)d of branch %(branch)r at r%(revision)s",
                         number=number, revision=revision, branch=branch)
         log.msg(format="falling off the end after searching %(count)d builds",
                 count=status.getNumber() - number)
+        if lastTrunkBuild:
+            revision, build = lastTrunkBuild
+            log.msg(format="Using build %(number)d at r%(revision)s instead of r%(targetRevision)s",
+                        number=build.getNumber(), revision=revision, targetRevision=targetRevision)
+            return build
         return None
 
 

@@ -105,6 +105,45 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
         self.expectProperty('got_revision', '9999')
         return self.runStep()
 
+    def test_checkout_bzrsvn_branch(self):
+        self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True),
+                args={'branch':'some/branch'})
+        self.expectCommands(
+                ExpectShell(workdir='wkdir',
+                           command=['bzr', 'plugins'])
+                + ExpectShell.log('stdio', stdout="launchpad 1234\nsvn 2345")
+                + 0,
+                Expect('bzr', dict(workdir='wkdir',
+                                   repourl="/some/bzr/repo/some/branch",
+                                   logEnviron=True,
+                                   patch=None,
+                                   env=None,
+                                   forceSharedRepo=True,
+                                   mode='update',
+                                   timeout=20*60,
+                                   retry=None))
+                + Expect.update('got_revision', 1234)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['bzr', 'revert', '--no-backup'])
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=["bzr", "clean-tree", "--force", "--ignored", "--detritus"])
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['bzr', 'version-info'])
+                + Expect.log('stdio', stdout='svn-revno: 9999')
+                + 0,
+                ExpectShell(workdir='wkdir',
+                    command=['bzr', 'version-info', '-r', 'ancestor:/some/bzr/repo/some/branch'])
+                + Expect.log('stdio', stdout='svn-revno: 8888')
+                + 0,
+        )
+        self.expectOutcome(result=SUCCESS, status_text=['update'])
+        self.expectProperty('got_revision', '9999')
+        self.expectProperty('branch_revision', '8888')
+        return self.runStep()
+
     def test_checkout_bzrsvn_revision(self):
         self.setupStep(BzrSvn(baseURL="/some/bzr/repo/", branch='trunk', forceSharedRepo=True),
                 dict(revision='9999'))

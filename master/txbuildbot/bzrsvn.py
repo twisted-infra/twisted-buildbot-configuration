@@ -88,7 +88,7 @@ class BzrSvn(Source):
         d.addCallback(lambda _: self._cleanTree())
         d.addCallback(lambda _: self._maybeGetSvnRevision('got_revision'))
         if branch != 'trunk':
-            revspec = 'ancestor:%s' % (self.baseURL + branch,)
+            revspec = 'ancestor:%s' % (self.baseURL + 'trunk',)
         else:
             revspec = 'before:'
         d.addCallback(lambda _: self._maybeGetSvnRevision('branch_revision', revspec))

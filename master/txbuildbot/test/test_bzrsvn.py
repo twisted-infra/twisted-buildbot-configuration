@@ -140,7 +140,7 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 + Expect.log('stdio', stdout='svn-revno: 9999')
                 + 0,
                 ExpectShell(workdir='wkdir',
-                    command=['bzr', 'version-info', '-r', 'ancestor:/some/bzr/repo/some/branch'])
+                    command=['bzr', 'version-info', '-r', 'ancestor:/some/bzr/repo/trunk'])
                 + Expect.log('stdio', stdout='svn-revno: 8888')
                 + 0,
         )

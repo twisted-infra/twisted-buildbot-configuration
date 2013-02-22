@@ -59,12 +59,13 @@ class BzrSvn(Source):
     def _cleanTree(self):
         return self._dovccmd(['clean-tree', '--force', '--ignored', '--detritus'])
 
-    _revno_re = re.compile("^svn-revno: ([0-9]*)$", re.MULTILINE)
+    _revno_re = re.compile("^svn[- ]revno: ([0-9]*)", re.MULTILINE)
     def _maybeGetSvnRevision(self, prop, revspec=None):
         if self.has_bzr_svn:
             command = ['version-info']
             if revspec:
-                command += ['-r', revspec]
+                # bzr 2.5 introduced support for version-info -r, but we can't depend on that.
+                command = ['log', '-r', revspec]
             d = self._dovccmd(command, collectStdout=True)
             @d.addCallback
             def _extractRevno(stdout):

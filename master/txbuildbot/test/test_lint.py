@@ -4,7 +4,10 @@ from buildbot.test.util.steps import BuildStepMixin
 from buildbot.test.fake.remotecommand import ExpectShell
 
 from txbuildbot.lint import LintStep
-from txbuildbot.lint import CheckDocumentation, CheckCodesByTwistedChecker
+from txbuildbot.lint import CheckDocumentation
+from txbuildbot.lint import CheckCodesByTwistedChecker, TwistedCheckerError
+from txbuildbot.lint import PyFlakes, PyFlakesError
+
 
 ## TODO: Add tests for getLastBuild/getPreviousLog
 
@@ -260,7 +263,6 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
 
     def test_coputeErrors(self):
         errors = CheckCodesByTwistedChecker.computeErrors("\n".join(self.logText))
-        from txbuildbot.lint import TwistedCheckerError
         self.assertEqual(errors, {
             'twisted.python': set([
                 TwistedCheckerError('W9002:  1,0: Missing a reference to test module in header'),
@@ -337,6 +339,59 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
             '************* Module twisted.trial.test.test_test_visitor',
             'W9208:  1,0: Missing docstring',
             'W9208: 18,0:TestTestVisitor: Missing docstring',
+            ]))
+        return self.runStep()
+
+class PyFlakesTests(LintStepMixin, unittest.TestCase):
+    """
+    Tests for L{PyFlakes}
+    """
+
+    setUp = LintStepMixin.setUpBuildStep
+    tearDown = LintStepMixin.tearDownBuildStep
+
+    logText = [
+        "twisted/conch/manhole_tap.py:14: 'session' imported but unused",
+        "twisted/conch/manhole_tap.py:15: 'iconch' imported but unused",
+        "twisted/mail/bounce.py:40: local variable 'boundary' is assigned to but never used",
+        "twisted/test/test_jelly.py:571: local variable 'n11' is assigned to but never used",
+        "twisted/test/test_jelly.py:572: local variable 'n2' is assigned to but never used",
+        ]
+
+    def test_coputeErrors(self):
+        errors = PyFlakes.computeErrors("\n".join(self.logText))
+        self.assertEqual(errors, {
+            'pyflakes': set([
+                PyFlakesError("twisted/conch/manhole_tap.py:14: 'session' imported but unused",
+                    "twisted/conch/manhole_tap.py", "14",
+                    "'session' imported but unused"),
+
+                PyFlakesError("twisted/conch/manhole_tap.py:15: 'iconch' imported but unused",
+                    "twisted/conch/manhole_tap.py", "15",
+                    "'iconch' imported but unused"),
+                PyFlakesError("twisted/mail/bounce.py:40: local variable 'boundary' is assigned to but never used",
+                    "twisted/mail/bounce.py", "40",
+                    "local variable 'boundary' is assigned to but never used"),
+                PyFlakesError("twisted/test/test_jelly.py:571: local variable 'n11' is assigned to but never used",
+                    "twisted/test/test_jelly.py", "571",
+                    "local variable 'n11' is assigned to but never used"),
+                PyFlakesError("twisted/test/test_jelly.py:572: local variable 'n2' is assigned to but never used",
+                    "twisted/test/test_jelly.py", "572",
+                    "local variable 'n2' is assigned to but never used"),
+                ])})
+
+    def test_newErrors(self):
+        """
+        """
+
+        self.setupStep(PyFlakes(), command=['pyflakes', 'twisted'],
+                oldText = "\n".join(self.logText[0:3]),
+                newText = "\n".join(self.logText),
+                )
+        self.expectOutcome(result=FAILURE, status_text=['pyflakes', 'failed'])
+        self.expectLogfile('new pyflakes errors', '\n'.join([
+            "twisted/test/test_jelly.py:571: local variable 'n11' is assigned to but never used",
+            "twisted/test/test_jelly.py:572: local variable 'n2' is assigned to but never used",
             ]))
         return self.runStep()
 

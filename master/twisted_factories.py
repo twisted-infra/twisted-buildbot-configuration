@@ -9,7 +9,6 @@ from buildbot.steps import shell, transfer
 from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import Bzr, Mercurial
-from buildbot.steps.python import PyFlakes
 from buildbot.steps.slave import RemoveDirectory
 from pypy_steps import Translate
 
@@ -17,7 +16,11 @@ from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, RemoveTrialTemp, LearnVersion, \
     SetBuildProperty
 
-from txbuildbot.lint import CheckDocumentation, CheckCodesByTwistedChecker
+from txbuildbot.lint import (
+        CheckDocumentation,
+        CheckCodesByTwistedChecker,
+        PyFlakes,
+        )
 
 TRIAL_FLAGS = ["--reporter=bwverbose"]
 WARNING_FLAGS = ["--unclean-warnings"]
@@ -128,21 +131,6 @@ class TwistedBaseFactory(BuildFactory):
         if 'python' not in kw:
             kw['python'] = self.python
         self.addStep(TwistedTrial, trialMode=trialMode, **kw)
-
-
-
-class PyFlakesBuildFactory(BuildFactory):
-    """
-    A build factory which just runs PyFlakes over the specified source.
-    """
-    def __init__(self, source):
-        if not isinstance(source, list):
-            source = [source]
-        BuildFactory.__init__(self, source)
-        self.addStep(
-            PyFlakes,
-            descriptionDone="PyFlakes", flunkOnFailure=True,
-            command=["pyflakes", "."])
 
 
 
@@ -891,3 +879,13 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
         self.addStep(CheckCodesByTwistedChecker,
             env={"PATH": ["../twistedchecker/bin","${PATH}"],
                  "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})
+
+class PyFlakesBuildFactory(TwistedBaseFactory):
+    """
+    A build factory which just runs PyFlakes over the specified source.
+    """
+
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(self, python, source, False)
+
+        self.addStep(PyFlakes)

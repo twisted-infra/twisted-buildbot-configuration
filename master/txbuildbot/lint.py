@@ -1,3 +1,4 @@
+import itertools
 from twisted.python import log, util
 from buildbot.status.builder import FAILURE
 from buildbot.steps.shell import ShellCommand
@@ -311,10 +312,71 @@ class CheckCodesByTwistedChecker(LintStep):
             allNewErrors = self.formatErrors(newErrors)
             self.addCompleteLog('new %s errors' % self.lintChecker, '\n'.join(allNewErrors))
 
-        import itertools
         for toplevel, modules in itertools.groupby(sorted(currentErrors.keys()), lambda k: ".".join(k.split(".")[0:2])):
             modules = list(modules)
             self.addCompleteLog("%s %s errors" % (self.lintChecker, toplevel),
                     '\n'.join(self.formatErrors(dict([(module, currentErrors[module]) for module in modules]))))
 
         return bool(newErrors)
+
+
+class PyFlakesError(util.FancyEqMixin, object):
+    regex = re.compile(r"^(?P<file>[^:]*):(?P<line>\d+): (?P<text>.*)")
+    compareAttributes = ('file', 'text')
+
+    def __init__(self, msg, file, line, text):
+        self.msg = msg
+        self.file = file
+        self.line = line
+        self.text = text
+
+    @classmethod
+    def fromLine(cls, msg):
+        m = cls.regex.match(msg)
+        if m:
+            d = m.groupdict()
+            return cls(msg, d['file'], d['line'], d['text'])
+
+    def __hash__(self):
+        return hash((self.file, self.text))
+
+    def __str__(self):
+        return self.msg
+
+    def __cmp__(self, other):
+        return cmp(
+                (self.file, self.line, self.text),
+                (other.file, other.line, other.text),
+                )
+
+    def __repr__(self):
+        return ("<PyFlakesError file=%s line=%d text=%r>" %
+            (self.file, int(self.line), self.text))
+
+class PyFlakes(LintStep):
+    """
+    Run TwistedChecker over source codes to check for new warnings
+    involved in the lastest build.
+    """
+    name = 'pyflakes'
+    command = ['pyflakes', Property('test-case-name', default='twisted')]
+    description = ["running", "pyflakes"]
+    descriptionDone = ['pyflakes']
+
+    lintChecker = 'pyflakes'
+
+    @classmethod
+    def computeErrors(cls, logText):
+        warnings = set() 
+        for line in StringIO.StringIO(logText):
+            # Mostly get rid of the trailing \n
+            line = line.strip("\n")
+            error = PyFlakesError.fromLine(line)
+            if error:
+                warnings.add(error)
+        return {'pyflakes':warnings}
+
+
+    @classmethod
+    def formatErrors(cls, newErrors):
+        return map(str, sorted(newErrors['pyflakes']))

@@ -1,5 +1,5 @@
 from twisted.trial import unittest
-from buildbot.status.results import SUCCESS, FAILURE
+from buildbot.status.results import SUCCESS, WARNINGS
 from buildbot.test.util.steps import BuildStepMixin
 from buildbot.test.fake.remotecommand import ExpectShell
 
@@ -72,7 +72,7 @@ class LintStepMixin(BuildStepMixin):
     Mixin for creating a step that succeeds, and returns appropriate old and new lint text.
     """
 
-    def setupStep(self, step, command=None, oldText='old', newText='new'):
+    def setupStep(self, step, command=None, oldText='old', newText='new', rc=0):
         """
         Initializes L{BuildStepMixin} with the provided step, and sets the command to
         expect a single shell command, and 
@@ -93,7 +93,7 @@ class LintStepMixin(BuildStepMixin):
         self.expectCommands(
                 ExpectShell(command=command or step.__class__.command, workdir='wkdir', usePTY='slave-config')
                 + ExpectShell.log('stdio', stdout=newText)
-                + 0
+                + rc
         )
 
 
@@ -145,7 +145,7 @@ class TestLintStep(LintStepMixin, unittest.TestCase):
         self.setupStep(FakeLintStep(
             oldErrors={'old': set(['a', 'b', 'c']), 'new': set(['a', 'b'])},
             newErrors={'old': set(['a', 'b']), 'new': set(['a', 'b', 'c'])}))
-        self.expectOutcome(result=FAILURE, status_text=['lint', 'done', 'failed'])
+        self.expectOutcome(result=WARNINGS, status_text=['lint', 'done', 'warnings'])
         self.expectLogfile('test-lint errors', '%r' % {'old': set(['a', 'b']), 'new': set(['a', 'b', 'c'])})
         self.expectLogfile('new test-lint errors', '%r' % {'new': set(['c'])})
         return self.runStep()
@@ -214,7 +214,7 @@ class PydoctorTests(LintStepMixin, unittest.TestCase):
                 oldText = "\n".join(self.logText[0:5:2]),
                 newText = "\n".join(self.logText),
                 )
-        self.expectOutcome(result=FAILURE, status_text=['api', 'docs'])
+        self.expectOutcome(result=WARNINGS, status_text=['api', 'docs'])
         self.expectLogfile('pydoctor errors', "\n".join([
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'getpid' 'The implementation ....'>",
             "found unknown field on 'twisted.internet.process._FDDetector': <Field 'ivars' 'listdir' 'The implementation ....'>",
@@ -298,7 +298,7 @@ class CheckCodesByTwistedCheckerTests(LintStepMixin, unittest.TestCase):
                 oldText = "\n".join(self.logText[0:-1:2]),
                 newText = "\n".join(self.logText),
                 )
-        self.expectOutcome(result=FAILURE, status_text=['check', 'results', 'failed'])
+        self.expectOutcome(result=WARNINGS, status_text=['check', 'results', 'warnings'])
         self.expectLogfile('twistedchecker twisted.python errors', '\n'.join([
             '************* Module twisted.python',
             'W9002:  1,0: Missing a reference to test module in header',
@@ -388,10 +388,22 @@ class PyFlakesTests(LintStepMixin, unittest.TestCase):
                 oldText = "\n".join(self.logText[0:3]),
                 newText = "\n".join(self.logText),
                 )
-        self.expectOutcome(result=FAILURE, status_text=['pyflakes', 'failed'])
+        self.expectOutcome(result=WARNINGS, status_text=['pyflakes', 'warnings'])
         self.expectLogfile('new pyflakes errors', '\n'.join([
             "twisted/test/test_jelly.py:571: local variable 'n11' is assigned to but never used",
             "twisted/test/test_jelly.py:572: local variable 'n2' is assigned to but never used",
             ]))
+        return self.runStep()
+
+    def test_noNewErrors(self):
+        """
+        """
+
+        self.setupStep(PyFlakes(), command=['pyflakes', 'twisted'],
+                oldText = "\n".join(self.logText),
+                newText = "\n".join(self.logText),
+                rc=1,
+                )
+        self.expectOutcome(result=SUCCESS, status_text=['pyflakes'])
         return self.runStep()
 

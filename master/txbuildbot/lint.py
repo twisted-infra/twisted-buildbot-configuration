@@ -1,6 +1,6 @@
 import itertools
 from twisted.python import log, util
-from buildbot.status.builder import FAILURE
+from buildbot.status.builder import SUCCESS, WARNINGS
 from buildbot.steps.shell import ShellCommand
 from buildbot.process.properties import Property
 
@@ -19,6 +19,7 @@ class LintStep(ShellCommand):
     @ivar worse: a L{bool} indicating whether this build is worse with respect
         to reported errors than the most recent trunk build.
     """
+    flunkOnWarnings = True
 
     def createSummary(self, logObj):
         logText = logObj.getText()
@@ -153,7 +154,7 @@ class LintStep(ShellCommand):
 
     def evaluateCommand(self, cmd):
         if self.worse:
-            return FAILURE
+            return WARNINGS
         return ShellCommand.evaluateCommand(self, cmd)
 
 
@@ -208,7 +209,7 @@ class CheckDocumentation(LintStep):
 
 
     def getText(self, cmd, results):
-        if results == FAILURE:
+        if results == WARNINGS:
             return ["api", "docs"]
         return ShellCommand.getText(self, cmd, results)
 
@@ -380,3 +381,8 @@ class PyFlakes(LintStep):
     @classmethod
     def formatErrors(cls, newErrors):
         return map(str, sorted(newErrors['pyflakes']))
+
+    def evaluateCommand(self, cmd):
+        if self.worse:
+            return WARNINGS
+        return SUCCESS

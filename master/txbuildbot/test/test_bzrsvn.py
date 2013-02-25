@@ -101,8 +101,8 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 + Expect.log('stdio', stdout='svn-revno: 9999')
                 + 0,
                 ExpectShell(workdir='wkdir',
-                    command=['bzr', 'version-info', '-r', 'before:'])
-                + Expect.log('stdio', stdout='svn-revno: 9888')
+                    command=['bzr', 'log', '-r', 'last:2'])
+                + Expect.log('stdio', stdout='svn revno: 9888 (on /trunk)')
                 + 0,
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])
@@ -140,8 +140,8 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 + Expect.log('stdio', stdout='svn-revno: 9999')
                 + 0,
                 ExpectShell(workdir='wkdir',
-                    command=['bzr', 'version-info', '-r', 'ancestor:/some/bzr/repo/trunk'])
-                + Expect.log('stdio', stdout='svn-revno: 8888')
+                    command=['bzr', 'log', '-r', 'ancestor:/some/bzr/repo/trunk'])
+                + Expect.log('stdio', stdout='svn revno: 8888 (on branch /some/branch)')
                 + 0,
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])
@@ -180,8 +180,8 @@ class TestBzrSvn(sourcesteps.SourceStepMixin, unittest.TestCase):
                 + Expect.log('stdio', stdout='svn-revno: 9999')
                 + 0,
                 ExpectShell(workdir='wkdir',
-                    command=['bzr', 'version-info', '-r', 'before:'])
-                + Expect.log('stdio', stdout='svn-revno: 9888')
+                    command=['bzr', 'log', '-r', 'last:2'])
+                + Expect.log('stdio', stdout='svn-revno: 9888 on (/trunk)')
                 + 0,
         )
         self.expectOutcome(result=SUCCESS, status_text=['update'])

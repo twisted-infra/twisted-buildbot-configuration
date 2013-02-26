@@ -9,7 +9,7 @@ class Translate(ShellCommand):
     description = ["Translating"]
     descriptionDone = ["Translation"]
 
-    command = ["../../../../pypy", "../../rpython/bin/rpython", "--batch"]
+    command = ["../../../pypy", "../../rpython/bin/rpython", "--batch"]
     translationTarget = "targetpypystandalone"
     haltOnFailure = False
 

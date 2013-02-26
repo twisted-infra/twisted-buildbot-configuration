@@ -1,4 +1,3 @@
-
 """
 Steps for translating PyPy.
 """
@@ -10,12 +9,12 @@ class Translate(ShellCommand):
     description = ["Translating"]
     descriptionDone = ["Translation"]
 
-    command = ["../../../../pypy", "translate.py", "--batch"]
+    command = ["../../../../pypy", "../../rpython/bin/rpython", "--batch"]
     translationTarget = "targetpypystandalone"
     haltOnFailure = False
 
     def __init__(self, translationArgs, targetArgs,
-                 workdir="build/pypy/translator/goal",
+                 workdir="build/pypy/goal",
                  *a, **kw):
         self.command = self.command + translationArgs + [self.translationTarget] + targetArgs
         ShellCommand.__init__(self, workdir, *a, **kw)

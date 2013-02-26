@@ -10,7 +10,7 @@ from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.steps.source import Bzr, Mercurial
 from buildbot.steps.slave import RemoveDirectory
-from pypy_steps import Translate
+from txbuildbot.pypy import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \
     Trial, RemovePYCs, RemoveTrialTemp, LearnVersion, \
@@ -475,8 +475,8 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
 
         # Don't try building these yet.  PyPy doesn't quite work well
         # enough.
-        pypyc = "pypy/translator/goal/pypy-c"
-	self.buildModules(pypyc, projects)
+        pypyc = "pypy/goal/pypy-c"
+        self.buildModules(pypyc, projects)
 
 
 

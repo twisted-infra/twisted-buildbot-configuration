@@ -168,18 +168,26 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
         # Get rid of the results of the last run
         self.addStep(
             shell.ShellCommand,
+            name="clean-lore2sphinx",
+            description=["cleaning", "lore2sphinx"],
+            descriptionDone=["clean", "lore2sphinx"],
             command=['hg', 'clean', '--all', '--exclude', 'lore2sphinx.conf'],
             workdir='lore2sphinx',
             haltOnFailure=True)
         # Get any updates to lore2sphinx
         self.addStep(
             shell.ShellCommand,
+            name="fetch-lore2sphinx",
+            description=["fetching", "lore2sphinx"],
+            descriptionDone=["fetch", "lore2sphinx"],
             command=['hg', 'pull', '-u'],
             workdir='lore2sphinx',
             haltOnFailure=True)
         # Generate the docs anew
         self.addStep(
             shell.ShellCommand,
+            name="lore2sphinx",
+            description=["lore2sphinx"],
             command=self.python + ['l2s_builder.py'],
             workdir='lore2sphinx',
             env={'PYTHONPATH': '.'},
@@ -192,7 +200,9 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             masterdest=WithProperties(
                 'public_html/builds/sphinx-html/%(buildnumber)s-%(got_revision)s'),
             blocksize=2 ** 16,
-            compress='gz')
+            compress='gz',
+            url=WithProperties(
+                '/builds/sphinx-html/%(buildnumber)s-%(got_revision)s'))
 
 
 

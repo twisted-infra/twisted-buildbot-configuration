@@ -39,6 +39,7 @@ slaves = [
     'snakebite-win2003-32',
     'snakebite-win2008r2-64',
     'tomprince-socrates-winxp-1',
+    'osuosl-osx10.6',
     ]
 
 # Give each slave a default password, 

@@ -46,21 +46,37 @@ class TenBoxesPerBuilder(HtmlResource):
         defer.returnValue(template.render(**context))
 
 
+    @defer.inlineCallbacks
     def body(self, req):
         status = self.getStatus(req)
+        authz = self.getAuthz(req)
         
         builders = req.args.get("builder", status.getBuilderNames(categories=self.categories))
         branches = [b for b in req.args.get("branch", []) if b]
-        if branches:
+        if branches and "trunk" not in branches:
             defaultCount = "1"
         else:
             defaultCount = "10"
         num_builds = int(req.args.get("num_builds", [defaultCount])[0])
 
         tag = tags.div()
-        tag(tags.h2("Latest builds: ", ", ".join(branches)))
+        
+        tag(tags.script(src="txbuildbot.js"))
+        tag(tags.h2(style="float:left; margin-top:0")("Latest builds: ", ", ".join(branches)))
 
-        table = tags.table()
+        form = tags.form(method="get", action="", style="float:right",
+                         onsubmit="return checkBranch(branch.value)")
+        form(tags.input(type="test", name="branch", placeholder="branch", size="40"))
+        form(tags.input(type="submit", value="View"))
+        if (yield authz.actionAllowed('forceAllBuilds', req)):
+            # XXX: Unsafe interpolation
+            form(tags.button(type="button",
+                onclick="forceBranch(branch.value, %r)" % (self.categories,)
+                )("Force"))
+        tag(form)
+
+
+        table = tags.table(style="clear:both")
         tag(table)
 
         for bn in builders:
@@ -96,12 +112,13 @@ class TenBoxesPerBuilder(HtmlResource):
                                 in [tags.a(href=url)(label)] + b.getText()]) )
             else:
                 row(tags.td(class_="LastBuild box")("no build"))
-        return flattenString(req, tag)
+        defer.returnValue((yield flattenString(req, tag)))
 
 class TwistedWebStatus(html.WebStatus):
     def __init__(self, **kwargs):
         html.WebStatus.__init__(self, **kwargs)
         self.putChild("boxes-supported", TenBoxesPerBuilder(categories=['supported']))
+        self.putChild("boxes-unsupported", TenBoxesPerBuilder(categories=['unsupported']))
         self.putChild("boxes-all", TenBoxesPerBuilder(categories=['supported', 'unsupported']))
         self.putChild("boxes-pyopenssl", TenBoxesPerBuilder(categories=['pyopenssl']))
         self.putChild("supported", WaterfallStatusResource(categories=['supported']))

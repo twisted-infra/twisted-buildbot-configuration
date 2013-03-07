@@ -23,11 +23,8 @@
         <a href="{{ path_to_root or '.' }}">Home</a>
 	- Builds
 	  <a href="{{ path_to_root }}boxes-supported?branch=trunk&num_builds=10">Supported</a>
-	  <a href="{{ path_to_root }}boxes-all?branch=trunk&num_builds=10">All</a>
-	- Waterfall
-	  <a href="{{ path_to_root }}supported">Supported</a>
-	  <a href="{{ path_to_root }}waterfall">All</a>
-	  <a href="{{ path_to_root }}waterfall-pyopenssl">PyOpenSSL</a>
+	  <a href="{{ path_to_root }}boxes-unsupported?branch=trunk&num_builds=10">Unsupported</a>
+	  <a href="{{ path_to_root }}boxes-pyopenssl?branch=trunk&num_builds=10">PyOpenSSL</a>
         - <a href="{{ path_to_root }}builders">Builders</a>
         <a href="{{ path_to_root }}console">Console</a>
         <a href="{{ path_to_root }}one_line_per_build">Recent Builds</a>

@@ -367,30 +367,67 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
         def transformVersion(build):
             return build.getProperty("version").split("+")[0].split("pre")[0]
         self.addStep(
-            SetBuildProperty, property_name='versionMsi', value=transformVersion)
+            SetBuildProperty, name='set-version', description=['Set', 'Version'],
+            property_name='versionMsi', value=transformVersion)
         self.addStep(shell.ShellCommand,
+                name='write-copyright-file',
+                description=['Update', 'twisted/copyright.py'],
+                descriptionDone=['Updated', 'twisted/copyright.py'],
                 command=[python, "-c", WithProperties(
                      'version = \'%(versionMsi)s\'; '
                      'f = file(\'twisted\copyright.py\', \'at\'); '
                      'f.write(\'version = \' + repr(version)); '
                      'f.close()')],
                      haltOnFailure=True)
-        if pyVersion >= "2.5":
-            self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_msi"],
-                         haltOnFailure=True)
-            self.addStep(
-                transfer.FileUpload,
-                slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.' + arch + '-py' + pyVersion + '.msi'),
-                masterdest=WithProperties(
-                    self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (arch, pyVersion)))
 
-        self.addStep(shell.ShellCommand, command=[python, "setup.py", "bdist_wininst"],
+        self.addStep(shell.ShellCommand,
+                     name='build-msi',
+                     description=['Build', 'msi'],
+                     descriptionDone=['Built', 'msi'],
+                     command=[python, "setup.py", "bdist_msi"],
                      haltOnFailure=True)
         self.addStep(
             transfer.FileUpload,
+            name='upload-msi',
+            slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.' + arch + '-py' + pyVersion + '.msi'),
+            masterdest=WithProperties(
+                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (arch, pyVersion)),
+            url=WithProperties(
+                '/build/twisted-packages/Twisted-%%(version)s.%s-py%s.msi' % (arch, pyVersion)))
+
+        self.addStep(shell.ShellCommand,
+                name='build-exe',
+                description=['Build', 'exe'],
+                descriptionDone=['Built', 'exe'],
+                command=[python, "setup.py", "bdist_wininst"],
+                haltOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            name='upload-exe',
             slavesrc=WithProperties('dist/Twisted-%(versionMsi)s.' + arch + '-py' + pyVersion + '.exe'),
             masterdest=WithProperties(
-                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (arch, pyVersion)))
+                self.uploadBase + 'twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (arch, pyVersion)),
+            url=WithProperties(
+                '/build/twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (arch, pyVersion)))
+
+        wheelPythonVersion = 'cp' + pyVersion.replace('.','') + '-none-' + arch
+        self.addStep(shell.ShellCommand,
+                name='build-whl',
+                description=['Build', 'wheel'],
+                descriptionDone=['Built', 'wheel'],
+                command=[python, "setup.py", "--command-package", "wheel", "bdist_wheel"],
+                haltOnFailure=True)
+        self.addStep(
+            transfer.FileUpload,
+            name='upload-whl',
+            slavesrc=WithProperties('dist/Twisted-%(versionMsi)s-' + wheelPythonVersion + '.whl'),
+            masterdest=WithProperties(
+                self.uploadBase + 'twisted-packages/Twisted-%(version)s-'
+                + wheelPythonVersion + '.whl'),
+            url=WithProperties(
+                '/build/twisted-packages/Twisted-%(version)s-'
+                + wheelPythonVersion + '.whl'),
+            )
 
     def python(self, pyVersion):
         return (

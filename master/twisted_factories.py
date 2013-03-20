@@ -366,8 +366,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
 
         def transformVersion(build):
             return build.getProperty("version").split("+")[0].split("pre")[0]
-        self.addStep(
-            SetBuildProperty, name='set-version', description=['Set', 'Version'],
+        self.addStep(SetBuildProperty,
             property_name='versionMsi', value=transformVersion)
         self.addStep(shell.ShellCommand,
                 name='write-copyright-file',

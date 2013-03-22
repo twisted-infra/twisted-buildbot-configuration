@@ -409,7 +409,7 @@ class TwistedBdistMsiFactory(TwistedBaseFactory):
             url=WithProperties(
                 '/build/twisted-packages/Twisted-%%(version)s.%s-py%s.exe' % (arch, pyVersion)))
 
-        wheelPythonVersion = 'cp' + pyVersion.replace('.','') + '-none-' + arch
+        wheelPythonVersion = 'cp' + pyVersion.replace('.','') + '-none-' + arch.replace('-','_')
         self.addStep(shell.ShellCommand,
                 name='build-whl',
                 description=['Build', 'wheel'],

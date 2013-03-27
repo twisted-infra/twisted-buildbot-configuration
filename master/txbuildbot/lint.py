@@ -182,21 +182,24 @@ class CheckDocumentation(LintStep):
     def computeErrors(logText):
         errors = {}
         for line in StringIO.StringIO(logText):
-            # Mostly get rid of the trailing \n
-            line = line.strip()
-            if 'invalid ref to' in line:
-                key = 'invalid ref'
-                # Discard the line number since it's pretty unstable
-                # over time
-                fqpnlineno, rest = line.split(' ', 1)
-                fqpn, lineno = fqpnlineno.split(':')
-                value = '%s: %s' % (fqpn, rest)
-            elif 'found unknown field on' in line:
-                key = 'unknown fields'
-                value = line
-            else:
-                continue
-            errors.setdefault(key, set()).add(value)
+            try:
+                # Mostly get rid of the trailing \n
+                line = line.strip()
+                if 'invalid ref to' in line:
+                    key = 'invalid ref'
+                    # Discard the line number since it's pretty unstable
+                    # over time
+                    fqpnlineno, rest = line.split(' ', 1)
+                    fqpn, lineno = fqpnlineno.split(':')
+                    value = '%s: %s' % (fqpn, rest)
+                elif 'found unknown field on' in line:
+                    key = 'unknown fields'
+                    value = line
+                else:
+                    continue
+                errors.setdefault(key, set()).add(value)
+            except: # TODO: This should be handled better.
+                log.err()
         return errors
 
 

@@ -884,7 +884,8 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             transfer.DirectoryUpload,
             workdir='Twisted',
             slavesrc='twisted-coverage',
-            masterdest=WithProperties('public_html/builds/twisted-coverage.py/twisted-coverage.py-r%(revision)s'),
+            masterdest=WithProperties('public_html/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
+            url=WithProperties('/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
             blocksize=2 ** 16,
             compress='gz')
 

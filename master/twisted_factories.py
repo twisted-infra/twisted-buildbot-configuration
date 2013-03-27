@@ -905,6 +905,7 @@ class TwistedBenchmarksFactory(TwistedBaseFactory):
 class TwistedPython3Tests(TwistedBaseFactory):
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)
+        self.addStep(RemovePYCs)
         self.addStep(
             shell.ShellCommand,
             command=self.python + [ "admin/run-python3-tests" ])

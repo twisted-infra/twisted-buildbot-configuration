@@ -20,6 +20,7 @@ class Buildbot(service.Service):
             # TODO: install dependencies
             # TODO: install private.py
             run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.configDir, 'master')))
+            cron.install(self.serviceUser, '{}/crontab'.format(self.configDir))
 
     def task_update(self, _installDeps=False):
         """

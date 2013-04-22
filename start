@@ -3,4 +3,7 @@
 PATH=~/.local/bin:$PATH
 
 basedir=~/src
-buildbot restart $basedir/master
+twistd \
+	--logfile ~/log/twistd.log \
+	--pidfile ~/run/twistd.pid \
+	--python ~/config/master/buildbot.tac

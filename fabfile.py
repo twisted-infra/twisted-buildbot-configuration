@@ -16,18 +16,18 @@ class Buildbot(service.Service):
         with settings(user=self.serviceUser):
             pip.install('sqlalchemy==0.7.10')
             self.task_update(_installDeps=True)
-            run('ln -nsf {}/start {}/start'.format(self.srcDir, self.binDir))
+            run('ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
             # TODO: install dependencies
             # TODO: install private.py
-            run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.srcDir, 'master')))
+            run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.configDir, 'master')))
 
     def task_update(self, _installDeps=False):
         """
         Update
         """
         with settings(user=self.serviceUser):
-            git.branch('https://github.com/twisted-infra/twisted-buildbot-configuration', self.srcDir)
-            buildbotSource = os.path.join(self.srcDir, 'buildbot-source')
+            git.branch('https://github.com/twisted-infra/twisted-buildbot-configuration', self.configDir)
+            buildbotSource = os.path.join(self.configDir, 'buildbot-source')
             git.branch('https://github.com/twisted-infra/buildbot', buildbotSource)
             if _installDeps:
                 pip.install('{}'.format(os.path.join(buildbotSource, 'master')),

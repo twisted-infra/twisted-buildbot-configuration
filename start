@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=~/.local/bin:$PATH
+
+basedir=~/src
+buildbot restart $basedir/master

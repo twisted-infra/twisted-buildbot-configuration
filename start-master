@@ -1,5 +1,0 @@
-#!/bin/bash
-
-basedir=$(dirname $0)
-source $basedir/virtualenv/bin/activate
-buildbot restart $basedir/master

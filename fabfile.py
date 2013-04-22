@@ -1,17 +1,37 @@
-from fabric.api import run, cd, task, hosts
+import os
 
-bb_master = hosts('bb-master@cube.twistedmatrix.com')
+from fabric.api import settings, run
 
-@task
-@bb_master
-def check():
-    with cd('Buildbot-0.8.6'):
-        run('bzr missing', pty=False)
+from braid import git, cron, pip
+from braid.twisted import service
+from braid import config
 
-@task
-@bb_master
-def update_master():
-    with cd('Buildbot-0.8.6'):
-        run('bzr pull', pty=False)
-        run('./start-master')
-    pass
+class Buildbot(service.Service):
+    def task_install(self):
+        """
+        Install buildbot.
+        """
+        self.bootstrap()
+
+        with settings(user=self.serviceUser):
+            pip.install('sqlalchemy==0.7.10')
+            self.task_update(_installDeps=True)
+            run('ln -nsf {}/start {}/start'.format(self.srcDir, self.binDir))
+            # TODO: install dependencies
+            # TODO: install private.py
+            run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.srcDir, 'master')))
+
+    def task_update(self, _installDeps=False):
+        """
+        Update
+        """
+        with settings(user=self.serviceUser):
+            git.branch('https://github.com/twisted-infra/twisted-buildbot-configuration', self.srcDir)
+            buildbotSource = os.path.join(self.srcDir, 'buildbot-source')
+            git.branch('https://github.com/twisted-infra/buildbot', buildbotSource)
+            if _installDeps:
+                pip.install('{}'.format(os.path.join(buildbotSource, 'master')))
+            else:
+                pip.install('--no-deps --upgrade {}'.format(os.path.join(buildbotSource, 'master')))
+
+globals().update(Buildbot('bb-master').getTasks())

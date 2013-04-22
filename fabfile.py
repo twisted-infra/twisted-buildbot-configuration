@@ -30,8 +30,10 @@ class Buildbot(service.Service):
             buildbotSource = os.path.join(self.srcDir, 'buildbot-source')
             git.branch('https://github.com/twisted-infra/buildbot', buildbotSource)
             if _installDeps:
-                pip.install('{}'.format(os.path.join(buildbotSource, 'master')))
+                pip.install('{}'.format(os.path.join(buildbotSource, 'master')),
+                        python='python')
             else:
-                pip.install('--no-deps --upgrade {}'.format(os.path.join(buildbotSource, 'master')))
+                pip.install('--no-deps --upgrade {}'.format(os.path.join(buildbotSource, 'master')),
+                        python='python')
 
 globals().update(Buildbot('bb-master').getTasks())

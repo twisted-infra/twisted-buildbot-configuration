@@ -1,8 +1,9 @@
 import os
 
-from fabric.api import settings, run
+from fabric.api import settings, run, env, cd, puts
 
 from braid import git, cron, pip
+from braid import fails
 from braid.twisted import service
 from braid import config
 
@@ -19,6 +20,11 @@ class Buildbot(service.Service):
             run('ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
             # TODO: install dependencies
             # TODO: install private.py
+            with cd(os.path.join(self.configDir, 'master')):
+                if (env.get('environment') != 'production' and
+                    fails('[ -f private.py ]')):
+                    puts('Using sample private.py')
+                    run('cp private.py.sample private.py')
             run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.configDir, 'master')))
             cron.install(self.serviceUser, '{}/crontab'.format(self.configDir))
 

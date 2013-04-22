@@ -7,6 +7,8 @@ from braid import fails
 from braid.twisted import service
 from braid import config
 
+_hush_pyflakes = [config]
+
 class Buildbot(service.Service):
     def task_install(self):
         """

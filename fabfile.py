@@ -1,7 +1,7 @@
 import os
 
 from fabric.api import settings, run, env, cd, puts, abort
-from fabric.config import files
+from fabric.contrib import files
 
 from braid import git, cron, pip
 from braid.twisted import service

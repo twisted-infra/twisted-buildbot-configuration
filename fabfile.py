@@ -1,9 +1,9 @@
 import os
 
-from fabric.api import settings, run, env, cd, puts
+from fabric.api import settings, run, env, cd, puts, abort
+from fabric.config import files
 
 from braid import git, cron, pip
-from braid import fails
 from braid.twisted import service
 from braid import config
 
@@ -20,15 +20,28 @@ class Buildbot(service.Service):
             pip.install('sqlalchemy==0.7.10')
             self.task_update(_installDeps=True)
             run('ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
+
             # TODO: install dependencies
             # TODO: install private.py
-            with cd(os.path.join(self.configDir, 'master')):
-                if (env.get('environment') != 'production' and
-                    fails('[ -f private.py ]')):
-                    puts('Using sample private.py')
-                    run('cp private.py.sample private.py')
-            run('~/.local/bin/buildbot upgrade-master {}'.format(os.path.join(self.configDir, 'master')))
+            if env.get('environment') == 'production':
+                self.task_testInit()
+
             cron.install(self.serviceUser, '{}/crontab'.format(self.configDir))
+
+    def task_testInit(self, force=None):
+        """
+        Do test environment setup (with fake passwords, etc).
+        """
+        if env.get('environment') == 'production':
+           abort("Don't use testInit in production.")
+
+        with cd(os.path.join(self.configDir, 'master')):
+            if force or not files.exists('private.py'):
+                puts('Using sample private.py')
+                run('cp private.py.sample private.py')
+
+            if force or not files.exists('state.sqlite'):
+                run('~/.local/bin/buildbot upgrade-master')
 
     def task_update(self, _installDeps=False):
         """

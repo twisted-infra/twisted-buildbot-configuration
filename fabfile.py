@@ -46,6 +46,13 @@ class Buildbot(service.Service):
             if force or not files.exists('state.sqlite'):
                 run('~/.local/bin/buildbot upgrade-master')
 
+    def task_updatePrivateData(self):
+        """
+        Update private config.
+        """
+        with settings(user=self.serviceUser):
+            git.branch('infra@svn.twistedmatrix.com:/git/infra/buildbot-private.git', '~/private')
+
     def task_update(self, _installDeps=False):
         """
         Update
@@ -60,5 +67,8 @@ class Buildbot(service.Service):
             else:
                 pip.install('--no-deps --upgrade {}'.format(os.path.join(buildbotSource, 'master')),
                         python='python')
+
+            if env.get('installPrivateData'):
+                self.task_updatePrivateData()
 
 globals().update(Buildbot('bb-master').getTasks())

@@ -38,8 +38,7 @@ class Buildbot(service.Service):
         if env.get('environment') == 'production':
            abort("Don't use testInit in production.")
 
-        with (settings(user=self.serviceUser),
-             cd(os.path.join(self.configDir, 'master'))):
+        with settings(user=self.serviceUser), cd(os.path.join(self.configDir, 'master')):
             if force or not files.exists('private.py'):
                 puts('Using sample private.py')
                 run('cp private.py.sample private.py')

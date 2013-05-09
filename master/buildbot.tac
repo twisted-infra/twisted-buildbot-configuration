@@ -1,15 +1,12 @@
-
 from twisted.application import service
 from buildbot.master import BuildMaster
 
-basedir = r'.'
-configfile = r'master.cfg'
+from os.path import expanduser
+from twisted.python.util import sibpath
 
-if basedir == '.':
-    import os.path
-    basedir = os.path.abspath(os.path.dirname(__file__))
+basedir = expanduser('~/data')
+configfile = sibpath(__file__, 'master.cfg')
 
 application = service.Application('buildmaster')
 
 BuildMaster(basedir, configfile).setServiceParent(application)
-

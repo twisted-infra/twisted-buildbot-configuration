@@ -156,7 +156,7 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
             workdir='.',
             slavesrc='./Twisted/apidocs.tar.bz2',
             masterdest=WithProperties(
-                'public_html/builds/apidocs/apidocs-%(got_revision)s.tar.bz2'),
+                'build_products/builds/apidocs/apidocs-%(got_revision)s.tar.bz2'),
             url=WithProperties(
                 '/builds/apidocs/apidocs-%(got_revision)s.tar.bz2'))
 
@@ -198,7 +198,7 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             workdir='lore2sphinx/profiles/twisted/build',
             slavesrc='html',
             masterdest=WithProperties(
-                'public_html/builds/sphinx-html/%(buildnumber)s-%(got_revision)s'),
+                'build_products/sphinx-html/%(buildnumber)s-%(got_revision)s'),
             blocksize=2 ** 16,
             compress='gz',
             url=WithProperties(
@@ -357,7 +357,7 @@ class TwistedEasyInstallVirtualEnvFactory(TwistedBaseFactory):
 class TwistedBdistMsiFactory(TwistedBaseFactory):
     treeStableTimer = 5*60
 
-    uploadBase = 'public_html/builds/'
+    uploadBase = 'build_products/'
     def __init__(self, source, uncleanWarnings, arch, pyVersion):
         python = self.python(pyVersion)
         TwistedBaseFactory.__init__(self, python, source, uncleanWarnings)
@@ -545,7 +545,7 @@ class PyOpenSSLBuildFactoryBase(BuildFactory):
     """
     def __init__(self, pyVersion, useTrial=True):
         BuildFactory.__init__(self, [pyOpenSSLSource])
-        self.uploadBase = 'public_html/builds/'
+        self.uploadBase = 'build_products/'
         self.useTrial = useTrial
         self.learnVersion(pyVersion)
 
@@ -804,13 +804,13 @@ class GCoverageFactory(TwistedBaseFactory):
             transfer.FileUpload,
             slavesrc='coverage.tar.gz',
             masterdest=WithProperties(
-                'public_html/builds/%(project)s-coverage-report/%(project)s-coverage-%%(%(revisionProperty)s)s.tar.gz' % {
+                'build_products/%(project)s-coverage-report/%(project)s-coverage-%%(%(revisionProperty)s)s.tar.gz' % {
                     'project': self.PROJECT,
                     'revisionProperty': self.revisionProperty}))
 
         # Unarchive it so it can be viewed directly.  WithProperties
         # is not supported by MasterShellCommand.  Joy.  Unbounded joy.
-        prefix = 'public_html/builds/%(project)s-coverage-report/%(project)s-coverage-' % {
+        prefix = 'build_products/%(project)s-coverage-report/%(project)s-coverage-' % {
             'project': self.PROJECT}
         self.addStep(
             MasterShellCommand,
@@ -884,7 +884,7 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             transfer.DirectoryUpload,
             workdir='Twisted',
             slavesrc='twisted-coverage',
-            masterdest=WithProperties('public_html/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
+            masterdest=WithProperties('build_products/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
             url=WithProperties('/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
             blocksize=2 ** 16,
             compress='gz')

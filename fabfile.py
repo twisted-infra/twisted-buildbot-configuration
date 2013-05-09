@@ -20,6 +20,9 @@ class Buildbot(service.Service):
             pip.install('sqlalchemy==0.7.10')
             self.task_update(_installDeps=True)
             run('ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
+            run('mkdir -p ~/data')
+            run('mkdir -p ~/data/build_products')
+            run('ln -nsf ~/data/build_products {}/master/public_html/builds')
 
             # TODO: install dependencies
             # TODO: install private.py

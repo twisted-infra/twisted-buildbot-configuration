@@ -26,12 +26,12 @@ class Buildbot(service.Service):
 
             # TODO: install dependencies
             # TODO: install private.py
-            if env.get('environment') == 'production':
-                self.task_testInit()
+            if env.get('installTestData'):
+                self.task_installTestData()
 
             cron.install(self.serviceUser, '{}/crontab'.format(self.configDir))
 
-    def task_testInit(self, force=None):
+    def task_installTestData(self, force=None):
         """
         Do test environment setup (with fake passwords, etc).
         """

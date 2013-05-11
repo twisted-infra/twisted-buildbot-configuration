@@ -2,8 +2,9 @@ import os
 
 from fabric.api import settings, run, env, cd, puts, abort
 from fabric.contrib import files
+from fabric.contrib.console import confirm
 
-from braid import git, cron, pip
+from braid import git, cron, pip, archive
 from braid.twisted import service
 from braid import config
 
@@ -70,5 +71,32 @@ class Buildbot(service.Service):
 
             if env.get('installPrivateData'):
                 self.task_updatePrivateData()
+
+    def task_dump(self, localfile):
+        """
+        Create a tarball containing all information not currently stored in
+        version control and download it to the given C{localfile}.
+        """
+        with settings(user=self.serviceUser):
+            archive.dump({
+                'data': 'data',
+            }, localfile)
+
+    def task_restore(self, localfile):
+        """
+        Restore all information not stored in version control from a tarball
+        on the invoking users machine.
+        """
+        msg = (
+            'The whole data directory will be replaced with the backup.\n'
+            'Do you want to proceed?'
+        )
+
+        print ''
+        if confirm(msg, default=False):
+            with settings(user=self.serviceUser):
+                archive.restore({
+                    'data': 'data',
+                }, localfile)
 
 globals().update(Buildbot('bb-master').getTasks())

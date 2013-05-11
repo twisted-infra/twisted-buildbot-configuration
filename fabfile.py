@@ -22,7 +22,7 @@ class Buildbot(service.Service):
             run('/bin/ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
             run('/bin/mkdir -p ~/data')
             run('/bin/mkdir -p ~/data/build_products')
-            run('/bin/ln -nsf ~/data/build_products {}/master/public_html/builds')
+            run('/bin/ln -nsf ~/data/build_products {}/master/public_html/builds'.format(self.configDir))
 
             # TODO: install dependencies
             # TODO: install private.py

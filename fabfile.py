@@ -19,10 +19,10 @@ class Buildbot(service.Service):
         with settings(user=self.serviceUser):
             pip.install('sqlalchemy==0.7.10')
             self.task_update(_installDeps=True)
-            run('ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
-            run('mkdir -p ~/data')
-            run('mkdir -p ~/data/build_products')
-            run('ln -nsf ~/data/build_products {}/master/public_html/builds')
+            run('/bin/ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
+            run('/bin/mkdir -p ~/data')
+            run('/bin/mkdir -p ~/data/build_products')
+            run('/bin/ln -nsf ~/data/build_products {}/master/public_html/builds')
 
             # TODO: install dependencies
             # TODO: install private.py
@@ -41,7 +41,7 @@ class Buildbot(service.Service):
         with settings(user=self.serviceUser), cd(os.path.join(self.configDir, 'master')):
             if force or not files.exists('private.py'):
                 puts('Using sample private.py')
-                run('cp private.py.sample private.py')
+                run('/bin/cp private.py.sample private.py')
 
             if force or not files.exists('state.sqlite'):
                 run('~/.local/bin/buildbot upgrade-master')

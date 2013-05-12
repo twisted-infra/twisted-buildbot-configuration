@@ -80,7 +80,9 @@ class Buildbot(service.Service):
         with settings(user=self.serviceUser):
             archive.dump({
                 'data': 'data',
-            }, localfile)
+            }, localfile, exclude=[
+                'http.log*',
+            ])
 
     def task_restore(self, localfile):
         """

@@ -5,9 +5,10 @@ from fabric.contrib import files
 
 from braid import git, cron, pip
 from braid.twisted import service
+from braid.tasks import addTasks
 from braid import config
 
-_hush_pyflakes = [config]
+__all__ = ['config']
 
 class Buildbot(service.Service):
     def task_install(self):
@@ -25,7 +26,6 @@ class Buildbot(service.Service):
             run('/bin/ln -nsf ~/data/build_products {}/master/public_html/builds'.format(self.configDir))
 
             # TODO: install dependencies
-            # TODO: install private.py
             if env.get('installTestData'):
                 self.task_installTestData()
 
@@ -71,4 +71,6 @@ class Buildbot(service.Service):
             if env.get('installPrivateData'):
                 self.task_updatePrivateData()
 
-globals().update(Buildbot('bb-master').getTasks())
+            self.task_restart()
+
+addTasks(globals(), Buildbot('bb-master').getTasks())

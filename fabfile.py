@@ -20,7 +20,7 @@ class Buildbot(service.Service):
 
         with settings(user=self.serviceUser):
             pip.install('sqlalchemy==0.7.10')
-            self.task_update(_installDeps=True)
+            self.update(_installDeps=True)
             run('/bin/ln -nsf {}/start {}/start'.format(self.configDir, self.binDir))
             run('/bin/mkdir -p ~/data')
             run('/bin/mkdir -p ~/data/build_products')
@@ -54,7 +54,7 @@ class Buildbot(service.Service):
         with settings(user=self.serviceUser):
             git.branch('infra@svn.twistedmatrix.com:/git/infra/buildbot-private.git', '~/private')
 
-    def task_update(self, _installDeps=False):
+    def update(self, _installDeps=False):
         """
         Update
         """
@@ -72,7 +72,12 @@ class Buildbot(service.Service):
             if env.get('installPrivateData'):
                 self.task_updatePrivateData()
 
-            self.task_restart()
+    def task_update(self):
+        """
+        Update config and restart.
+        """
+        self.update()
+        self.task_restart()
 
 
     def task_dump(self, localfile):

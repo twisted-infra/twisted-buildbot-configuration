@@ -2,11 +2,11 @@ import os
 
 from fabric.api import settings, run, env, cd, puts, abort
 from fabric.contrib import files
-from fabric.contrib.console import confirm
 
 from braid import git, cron, pip, archive
 from braid.twisted import service
 from braid.tasks import addTasks
+from braid.utils import confirm
 from braid import config
 
 __all__ = ['config']
@@ -98,13 +98,9 @@ class Buildbot(service.Service):
         Restore all information not stored in version control from a tarball
         on the invoking users machine.
         """
-        msg = (
-            'The whole data directory will be replaced with the backup.\n'
-            'Do you want to proceed?'
-        )
+        msg = 'The whole data directory will be replaced with the backup.'
 
-        print ''
-        if confirm(msg, default=False):
+        if confirm(msg):
             with settings(user=self.serviceUser):
                 archive.restore({
                     'data': 'data',

@@ -52,7 +52,7 @@ class Buildbot(service.Service):
         Update private config.
         """
         with settings(user=self.serviceUser):
-            git.branch('infra@svn.twistedmatrix.com:/git/infra/buildbot-private.git', '~/private')
+            git.branch('tomprince@svn.twistedmatrix.com:infra/buildbot-private.git', '~/private')
 
     def update(self, _installDeps=False):
         """

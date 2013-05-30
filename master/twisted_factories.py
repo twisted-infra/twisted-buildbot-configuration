@@ -202,7 +202,7 @@ class TwistedSphinxBuildFactory(TwistedBaseFactory):
             blocksize=2 ** 16,
             compress='gz',
             url=WithProperties(
-                '/builds/sphinx-html/%(buildnumber)s-%(got_revision)s'))
+                '/builds/sphinx-html/%(buildnumber)s-%(got_revision)s/'))
 
 
 
@@ -885,7 +885,7 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             workdir='Twisted',
             slavesrc='twisted-coverage',
             masterdest=WithProperties('build_products/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
-            url=WithProperties('/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s'),
+            url=WithProperties('/builds/twisted-coverage.py/twisted-coverage.py-r%(got_revision)s/'),
             blocksize=2 ** 16,
             compress='gz')
 

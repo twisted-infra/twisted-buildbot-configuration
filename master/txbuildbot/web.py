@@ -53,6 +53,8 @@ class TenBoxesPerBuilder(HtmlResource):
         
         builders = req.args.get("builder", status.getBuilderNames(categories=self.categories))
         branches = [b for b in req.args.get("branch", []) if b]
+        if not branches:
+            branches = ["trunk"]
         if branches and "trunk" not in branches:
             defaultCount = "1"
         else:
@@ -66,12 +68,13 @@ class TenBoxesPerBuilder(HtmlResource):
 
         form = tags.form(method="get", action="", style="float:right",
                          onsubmit="return checkBranch(branch.value)")
-        form(tags.input(type="test", name="branch", placeholder="branch", size="40"))
+        form(tags.input(type="test", name="branch", placeholder=branches[0], size="40"))
         form(tags.input(type="submit", value="View"))
         if (yield authz.actionAllowed('forceAllBuilds', req)):
             # XXX: Unsafe interpolation
             form(tags.button(type="button",
-                onclick="forceBranch(branch.value, %r)" % (self.categories,)
+                onclick="forceBranch(branch.value || %r, %r)"
+                        % (branches[0], self.categories,)
                 )("Force"))
         tag(form)
 

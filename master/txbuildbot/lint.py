@@ -121,7 +121,7 @@ class LintStep(ShellCommand):
 
         count = 0
         lastTrunkBuild = None
-        while count < 40 and number > 0:
+        while count < 200 and number > 0:
             number -= 1
             build = builder.getBuild(number)
             if not build:

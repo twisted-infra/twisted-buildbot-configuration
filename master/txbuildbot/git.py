@@ -15,7 +15,8 @@ class TwistedGit(Git):
         If a branch name starts with /branches/, cut it off before referring
         to it in git commands.
         """
-        cutoff = "/branches/"
-        if branch.startswith(cutoff):
-            branch = branch[len(cutoff):]
+        for cutoff in ['/branches/', 'branches/']:
+            if branch.startswith(cutoff):
+                branch = branch[len(cutoff):]
+                break
         return Git.startVC(self, branch, revision, patch)

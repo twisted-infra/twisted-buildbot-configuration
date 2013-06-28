@@ -670,29 +670,8 @@ class ProcessDocs(ShellCommand):
     name = "process-docs"
     warnOnWarnings = 1
     command = [
-        "python", "-c",
-        "from twisted.python import _release as r\n"
-        "from twisted.python.filepath import FilePath\n"
-        "done = {}\n"
-        "for p in FilePath('doc').walk():\n"
-        "    if p.basename() == 'man':\n"
-        "        print 'processing manual pages:', p.path\n"
-        "        done[p] = True\n"
-        "        r.ManBuilder().build(p)\n"
-        "for p in FilePath('doc').walk():\n"
-        "    if p.basename().endswith('.xhtml'):\n"
-        "        if p.parent() not in done:\n"
-        "            print 'processing howto pages:', p.parent().path\n"
-        "            done[p.parent()] = True\n"
-        "            r.DocBuilder().build(\n"
-        "                'dev', FilePath('doc/core/howto'), p.parent(),\n"
-        "                FilePath('doc/core/howto/template.tpl'))\n"
-        "print 'building book:'\n"
-        "for p in done:\n"
-        "    print '\t', p.path\n"
-        "r.BookBuilder().build(FilePath('doc/core/howto'), done.keys(),\n"
-        "                      FilePath('doc/core/howto/book.tex'),\n"
-        "                      FilePath('book.pdf'))\n"]
+        "python",
+        "bin/admin/build-docs", ".", "doc/core/howto/template.tpl"]
     description = ["processing", "docs"]
     descriptionDone = ["docs"]
     # TODO: track output and time

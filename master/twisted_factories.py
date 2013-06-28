@@ -150,12 +150,19 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
         self.addStep(ProcessDocs)
         self.addStep(
             shell.ShellCommand,
+            name="bundle-docs",
+            description=["bundling", "docs"],
+            descriptionDone=["bundle", "docs"],
             command=['/bin/tar', 'cjf', 'doc.tar.bz2', 'doc'])
         self.addStep(
             shell.ShellCommand,
+            name="bundle-apidocs",
+            description=["bundling", "apidocs"],
+            descriptionDone=["bundle", "apidocs"],
             command=['/bin/tar', 'cjf', 'apidocs.tar.bz2', 'apidocs'])
         self.addStep(
             transfer.FileUpload,
+            name='upload-apidocs',
             workdir='.',
             slavesrc='./Twisted/apidocs.tar.bz2',
             masterdest=WithProperties(
@@ -164,12 +171,13 @@ class TwistedDocumentationBuildFactory(TwistedBaseFactory):
                 '/builds/apidocs/apidocs-%(got_revision)s.tar.bz2'))
         self.addStep(
             transfer.FileUpload,
+            name='upload-docs',
             workdir='.',
             slavesrc='./Twisted/doc.tar.bz2',
             masterdest=WithProperties(
                 'build_products/docs/doc-%(got_revision)s.tar.bz2'),
             url=WithProperties(
-                '/builds/apidocs/doc-%(got_revision)s.tar.bz2'))
+                '/builds/docs/doc-%(got_revision)s.tar.bz2'))
 
 
 

@@ -166,13 +166,10 @@ class CheckDocumentation(LintStep):
     """
     name = 'api-documentation'
     command = (
-        'python '
-        '~/Projects/pydoctor/trunk/bin/pydoctor '
-        '--quiet '
-        '--introspect-c-modules '
-        '--make-html '
-        '--system-class pydoctor.twistedmodel.TwistedSystem '
-        '--add-package `pwd`/twisted')
+        'python',
+        'bin/admin/build-apidocs',
+        '.',
+        'apidocs')
     description = ["checking", "api", "docs"]
     descriptionDone = ["api", "docs"]
 

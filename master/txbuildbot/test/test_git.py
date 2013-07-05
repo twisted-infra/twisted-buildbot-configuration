@@ -36,3 +36,30 @@ class TestTwistedGit(sourcesteps.SourceStepMixin, TestCase):
 
     def test_startVC_mungesBranch_withoutSlash(self):
         return self.assertStartVCMunges('branches/test-branch-1234', 'test-branch-1234')
+
+    def test_startVCUsesGitRevision(self):
+        """
+        TwistedGit.startVC honors the "git_revision" property of the Change
+        object to know which git revision to use when performing a post-commit
+        build.
+        """
+        class FakeBuild(object):
+            def getSourceStamp(self, id):
+                return FakeSourceStamp()
+
+        class FakeChange(object):
+            properties = {"git_revision": "abcdef"}
+
+        class FakeSourceStamp(object):
+            changes = [FakeChange()]
+
+        def startVC_replacement(step, branch, revision, patch):
+            gitStartVC.append((step, branch, revision, patch))        
+
+        self.patch(Git, 'startVC', startVC_replacement)
+        tgit = TwistedGit(repourl='git://twisted', branch="")
+        tgit.build = FakeBuild()
+        gitStartVC = []
+        tgit.startVC("", 195, "")
+
+        self.assertEqual(gitStartVC[0][2], "abcdef")

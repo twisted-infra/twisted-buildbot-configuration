@@ -2,9 +2,10 @@ import mock
 from twisted.trial.unittest import TestCase
 from buildbot.test.util import sourcesteps
 from buildbot.steps.source.git import Git
-from buildbot.status.results import SUCCESS
+from buildbot.status.results import SUCCESS, SKIPPED
+from buildbot.test.fake.remotecommand import ExpectShell
 
-from txbuildbot.git import TwistedGit
+from txbuildbot.git import TwistedGit, MergeForward
 
 class TestTwistedGit(sourcesteps.SourceStepMixin, TestCase):
     """
@@ -63,3 +64,53 @@ class TestTwistedGit(sourcesteps.SourceStepMixin, TestCase):
         tgit.startVC("", 195, "")
 
         self.assertEqual(gitStartVC[0][2], "abcdef")
+
+
+class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
+    """
+    Tests for L{MergeForward}.
+    """
+
+    def setUp(self):
+        return self.setUpSourceStep()
+
+    def tearDown(self):
+        return self.tearDownSourceStep()
+
+
+    def buildStep(self, branch):
+        self.setupStep(MergeForward(repourl='git://twisted'),
+                       {'branch': branch})
+
+    def assertMerge(self, branch):
+        self.buildStep(branch)
+        self.expectCommands(
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'pull', '--no-ff',
+                                '-mMerge forward.', 'git://twisted', 'trunk'],
+                            usePTY='slave-config')
+                + 0,
+        )
+        self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
+        return self.runStep()
+
+    def assertSkipped(self, branch):
+        self.buildStep(branch)
+        self.expectOutcome(result=SKIPPED, status_text=['merge', 'forward', 'skipped'])
+        self.expectHidden(True)
+        return self.runStep()
+
+    def test_mergeBranch(self):
+        return self.assertMerge('/branches/radical-feature-9999')
+
+    def test_skipTrunk(self):
+        return self.assertSkipped('/trunk')
+
+    def test_skipEmpty(self):
+        return self.assertSkipped('')
+
+    def test_skipNone(self):
+        return self.assertSkipped(None)
+
+    def test_skipReleases(self):
+        return self.assertSkipped('/branches/releases/release-28.0-9999')

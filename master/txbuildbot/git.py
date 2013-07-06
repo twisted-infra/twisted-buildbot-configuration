@@ -43,7 +43,11 @@ class MergeForward(ShellCommand):
         kwargs['command'] = ['git', 'pull',
                              '--no-ff', '--no-stat',
                              repourl, 'trunk']
-        kwargs['env'] = {'GIT_MERGE_AUTOEDIT': 'no'}
+        kwargs['env'] = {
+                'GIT_MERGE_AUTOEDIT': 'no',
+                'GIT_AUTHOR_EMAIL': 'buildbot@twistedmatrix.com',
+                'GIT_AUTHOR_NAME': 'Twisted Buildbot',
+                }
         ShellCommand.__init__(self, **kwargs)
         self.addFactoryArguments(repourl=repourl)
 

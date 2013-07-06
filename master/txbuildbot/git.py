@@ -41,8 +41,9 @@ class MergeForward(ShellCommand):
 
     def __init__(self, repourl, **kwargs):
         kwargs['command'] = ['git', 'pull',
-                             '--no-ff', '--no-stat', '--no-edit',
+                             '--no-ff', '--no-stat',
                              repourl, 'trunk']
+        kwargs['env'] = {'GIT_MERGE_AUTOEDIT': 'no'}
         ShellCommand.__init__(self, **kwargs)
         self.addFactoryArguments(repourl=repourl)
 

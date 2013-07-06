@@ -86,8 +86,9 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
         self.buildStep(branch)
         self.expectCommands(
                 ExpectShell(workdir='wkdir',
-                            command=['git', 'pull', '--no-ff',
-                                '-mMerge forward.', 'git://twisted', 'trunk'],
+                            command=['git', 'pull',
+                                '--no-ff', '--no-stat', '--no-edit',
+                                'git://twisted', 'trunk'],
                             usePTY='slave-config')
                 + 0,
         )

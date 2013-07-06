@@ -39,7 +39,9 @@ class MergeForward(ShellCommand):
 
 
     def __init__(self, repourl, **kwargs):
-        kwargs['command'] = ['git', 'pull', '--no-ff', '-mMerge forward.', repourl, 'trunk']
+        kwargs['command'] = ['git', 'pull',
+                             '--no-ff', '--no-stat', '--no-edit',
+                             repourl, 'trunk']
         ShellCommand.__init__(self, **kwargs)
         self.addFactoryArguments(repourl=repourl)
 

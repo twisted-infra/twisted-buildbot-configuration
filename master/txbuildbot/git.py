@@ -31,11 +31,12 @@ class TwistedGit(Git):
 
 class MergeForward(ShellCommand):
     """
-
+    Merge with trunk.
     """
     name = 'merge-forward'
     description = ['merging', 'forward']
     descriptionDone = ['merge', 'forward']
+    haltOnFailure = True
 
 
     def __init__(self, repourl, **kwargs):

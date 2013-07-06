@@ -47,6 +47,8 @@ class MergeForward(ShellCommand):
                 'GIT_MERGE_AUTOEDIT': 'no',
                 'GIT_AUTHOR_EMAIL': 'buildbot@twistedmatrix.com',
                 'GIT_AUTHOR_NAME': 'Twisted Buildbot',
+                'GIT_COMMITTER_EMAIL': 'buildbot@twistedmatrix.com',
+                'GIT_COMMITTER_NAME': 'Twisted Buildbot',
                 }
         ShellCommand.__init__(self, **kwargs)
         self.addFactoryArguments(repourl=repourl)

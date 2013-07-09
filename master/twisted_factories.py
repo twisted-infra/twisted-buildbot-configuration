@@ -537,6 +537,13 @@ class PyPyTranslationFactory(BuildFactory, InterpreterBuilderMixin):
             Translate,
             translationArgs=translationArguments,
             targetArgs=targetArguments)
+        self.addStep(
+            ShellCommand,
+            name="link-binary",
+            description=["linking", "binary"],
+            descriptionDone=["link", "binary"],
+            command=["ln", "-nsf", "build/pypy/goal/pypy-c", "."],
+            workdir=".")
 
         # Don't try building these yet.  PyPy doesn't quite work well
         # enough.

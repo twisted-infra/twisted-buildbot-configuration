@@ -461,12 +461,18 @@ class InterpreterBuilderMixin:
     def buildModule(self, python, basename):
         self.addStep(
             ShellCommand,
+            name="extract-"+basename,
+            desciption=["extracting", basename],
+            desciptionDone=["extract", basename],
             # Can't make workdir build, .. won't resolve properly
             # because build is a symlink.
             workdir=".",
             command=["/bin/tar", "Cxzf", "build", basename + ".tar.gz"])
         self.addStep(
             ShellCommand,
+            name="install-"+basename,
+            desciption=["installing", basename],
+            desciptionDone=["install", basename],
             workdir="build/" + basename,
             command=[python, "setup.py", "clean", "install", "--prefix", self.modulePrefix])
 
@@ -478,6 +484,7 @@ class InterpreterBuilderMixin:
             # Send the tarball down
             self.addStep(
                 transfer.FileDownload,
+                name="download-" + basename,
                 mastersrc="dependencies/" + basename + ".tar.gz",
                 slavedest=basename + ".tar.gz",
                 workdir=".")
@@ -492,15 +499,24 @@ class InterpreterBuilderMixin:
         basename = dirname + '.tar.gz'
         self.addStep(
             ShellCommand,
+            name="extract-"+basename,
+            desciption=["extracting", basename],
+            desciptionDone=["extract", basename],
             workdir=".",
             command=["/bin/tar", "Cxzf", "build", basename])
         self.addStep(
             ShellCommand,
+            name="configure-"+basename,
+            desciption=["configuring", basename],
+            desciptionDone=["configure", basename],
             workdir="build/" + dirname,
             env={"PYTHON": python},
             command="./configure --prefix=${PWD}/" + self.modulePrefix)
         self.addStep(
             ShellCommand,
+            name="install-"+basename,
+            desciption=["installing", basename],
+            desciptionDone=["install", basename],
             workdir="build/" + dirname,
             command=["make", "install"])
 

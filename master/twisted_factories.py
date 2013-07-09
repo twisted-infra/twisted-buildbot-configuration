@@ -538,6 +538,13 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             ShellCommand,
             command=["make", "install"])
         pythonc = "install/bin/" + python
+        self.addStep(
+            ShellCommand,
+            name="link-binary",
+            description=["linking", "binary"],
+            descriptionDone=["link", "binary"],
+            command=["ln", "-nsf", pythonc, "python"],
+            workdir=".")
         self.buildModules(pythonc, projects)
 
 

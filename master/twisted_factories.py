@@ -499,16 +499,16 @@ class InterpreterBuilderMixin:
         basename = dirname + '.tar.gz'
         self.addStep(
             ShellCommand,
-            name="extract-"+basename,
-            description=["extracting", basename],
-            descriptionDone=["extract", basename],
+            name="extract-"+dirname,
+            description=["extracting", dirname],
+            descriptionDone=["extract", dirname],
             workdir=".",
             command=["/bin/tar", "Cxzf", "build", basename])
         self.addStep(
             ShellCommand,
-            name="configure-"+basename,
-            description=["configuring", basename],
-            descriptionDone=["configure", basename],
+            name="configure-"+dirname,
+            description=["configuring", dirname],
+            descriptionDone=["configure", dirname],
             workdir="build/" + dirname,
             env={"PYTHON": python},
             command="./configure --prefix=${PWD}/" + self.modulePrefix)

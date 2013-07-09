@@ -462,8 +462,8 @@ class InterpreterBuilderMixin:
         self.addStep(
             ShellCommand,
             name="extract-"+basename,
-            desciption=["extracting", basename],
-            desciptionDone=["extract", basename],
+            description=["extracting", basename],
+            descriptionDone=["extract", basename],
             # Can't make workdir build, .. won't resolve properly
             # because build is a symlink.
             workdir=".",
@@ -471,8 +471,8 @@ class InterpreterBuilderMixin:
         self.addStep(
             ShellCommand,
             name="install-"+basename,
-            desciption=["installing", basename],
-            desciptionDone=["install", basename],
+            description=["installing", basename],
+            descriptionDone=["install", basename],
             workdir="build/" + basename,
             command=[python, "setup.py", "clean", "install", "--prefix", self.modulePrefix])
 
@@ -500,23 +500,23 @@ class InterpreterBuilderMixin:
         self.addStep(
             ShellCommand,
             name="extract-"+basename,
-            desciption=["extracting", basename],
-            desciptionDone=["extract", basename],
+            description=["extracting", basename],
+            descriptionDone=["extract", basename],
             workdir=".",
             command=["/bin/tar", "Cxzf", "build", basename])
         self.addStep(
             ShellCommand,
             name="configure-"+basename,
-            desciption=["configuring", basename],
-            desciptionDone=["configure", basename],
+            description=["configuring", basename],
+            descriptionDone=["configure", basename],
             workdir="build/" + dirname,
             env={"PYTHON": python},
             command="./configure --prefix=${PWD}/" + self.modulePrefix)
         self.addStep(
             ShellCommand,
             name="install-"+basename,
-            desciption=["installing", basename],
-            desciptionDone=["install", basename],
+            description=["installing", basename],
+            descriptionDone=["install", basename],
             workdir="build/" + dirname,
             command=["make", "install"])
 

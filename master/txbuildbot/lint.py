@@ -137,8 +137,11 @@ class LintStep(ShellCommand):
                 else:
                     log.msg(format="skipping build %(number)d of trunk at r%(revision)s",
                             number=number, revision=revision)
-                    if revision and (not lastTrunkBuild or (lastTrunkBuild[0] > max(int(revision), int(targetRevision)))):
-                        lastTrunkBuild = (int(revision), build)
+                    try:
+                        if revision and (not lastTrunkBuild or (lastTrunkBuild[0] > max(int(revision), int(targetRevision)))):
+                            lastTrunkBuild = (int(revision), build)
+                    except TypeError:
+                        pass
             else:
                 log.msg(format="skipping build %(number)d of branch %(branch)r at r%(revision)s",
                         number=number, revision=revision, branch=branch)

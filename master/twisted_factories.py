@@ -533,9 +533,15 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             mode="copy")
         self.addStep(
             ShellCommand,
+            name="configure-python",
+            description=["configuring", "python"],
+            descriptionDone=["configure", "python"],
             command="./configure --prefix=$PWD/install")
         self.addStep(
             ShellCommand,
+            name="install-python",
+            description=["installing", "python"],
+            descriptionDone=["install", "python"],
             command=["make", "install"])
         pythonc = "install/bin/" + python
         self.addStep(

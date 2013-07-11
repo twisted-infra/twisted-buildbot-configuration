@@ -549,7 +549,7 @@ class CPythonBuildFactory(BuildFactory, InterpreterBuilderMixin):
             name="link-binary",
             description=["linking", "binary"],
             descriptionDone=["link", "binary"],
-            command=["ln", "-nsf", pythonc, "python"],
+            command=["ln", "-nsf", "build/" + pythonc, "python"],
             workdir=".")
         self.buildModules(pythonc, projects)
 

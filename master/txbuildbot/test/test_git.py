@@ -87,8 +87,15 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
         self.expectCommands(
                 ExpectShell(workdir='wkdir',
                             command=['git', 'pull',
-                                '--no-ff', '--no-stat', '--no-edit',
+                                '--no-ff', '--no-stat',
                                 'git://twisted', 'trunk'],
+                            env={
+                                'GIT_MERGE_AUTOEDIT': 'no',
+                                'GIT_AUTHOR_EMAIL': 'buildbot@twistedmatrix.com',
+                                'GIT_AUTHOR_NAME': 'Twisted Buildbot',
+                                'GIT_COMMITTER_EMAIL': 'buildbot@twistedmatrix.com',
+                                'GIT_COMMITTER_NAME': 'Twisted Buildbot',
+                            },
                             usePTY='slave-config')
                 + 0,
         )

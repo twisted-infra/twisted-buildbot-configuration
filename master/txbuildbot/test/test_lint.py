@@ -115,8 +115,6 @@ class FakeLintStep(LintStep):
         @param newErrors: errors to return when C{logText} is C{'new'}
         """
         LintStep.__init__(self)
-        self.factory[1].clear()
-        self.addFactoryArguments(oldErrors=oldErrors, newErrors=newErrors)
         self.oldErrors = oldErrors
         self.newErrors = newErrors
 

@@ -3,15 +3,15 @@ import re
 from twisted.python import log
 
 from buildbot.process import buildstep
-from buildbot.steps.source import Source
+from buildbot.steps.source.oldsource import SlaveSource
 from buildbot.status.results import SUCCESS
 
 
-class BzrSvn(Source):
+class BzrSvn(SlaveSource):
     name = "bzr-svn"
 
     def __init__(self, baseURL, branch, forceSharedRepo=True, **kwargs):
-        Source.__init__(self, **kwargs)
+        SlaveSource.__init__(self, **kwargs)
         self.branch = branch
         self.baseURL = baseURL
         self.forceSharedRepo = forceSharedRepo
@@ -79,7 +79,7 @@ class BzrSvn(Source):
             self.step_status.setText(['update'])
         else:
             self.step_status.setText(['update', 'failed'])
-        return Source.finished(self, results)
+        return SlaveSource.finished(self, results)
 
     def startVC(self, branch, revision, patch):
         self.stdio_log = self.addLog("stdio")

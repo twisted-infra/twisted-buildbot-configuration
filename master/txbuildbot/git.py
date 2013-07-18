@@ -19,7 +19,7 @@ class TwistedGit(Git):
             if branch.startswith(cutoff):
                 branch = branch[len(cutoff):]
                 break
-        id = self.getRepository()
+        id = self.codebase
         s = self.build.getSourceStamp(id)
         if s.changes:
             latest_properties = s.changes[-1].properties
@@ -58,7 +58,7 @@ class MergeForward(ShellCommand):
         """
         Don't merge if building trunk or a release.
         """
-        stamp = self.build.getSourceStamp(None)
+        stamp = self.build.getSourceStamp('')
         branch = stamp.branch
 
         if branch is None:

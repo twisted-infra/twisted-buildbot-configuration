@@ -116,8 +116,8 @@ class LintStep(ShellCommand):
             return None
 
         builder = status.getBuilder()
-        targetRevision = self.getProperty('branch_revision')
-        log.msg(format='Looking for build of r%(revision)s', revision=targetRevision)
+        targetRevision = self.getProperty('lint_revision')
+        log.msg(format='Looking for build of %(revision)s', revision=targetRevision)
 
         count = 0
         lastTrunkBuild = None
@@ -131,25 +131,25 @@ class LintStep(ShellCommand):
             if not branch:
                 count += 1
                 if revision == targetRevision:
-                    log.msg(format="Found build %(number)d of trunk at r%(revision)s",
+                    log.msg(format="Found build %(number)d of trunk at %(revision)s",
                             number=number, revision=revision)
                     return build
                 else:
-                    log.msg(format="skipping build %(number)d of trunk at r%(revision)s",
+                    log.msg(format="skipping build %(number)d of trunk at %(revision)s",
                             number=number, revision=revision)
                     try:
-                        if revision and (not lastTrunkBuild or (lastTrunkBuild[0] > max(int(revision), int(targetRevision)))):
-                            lastTrunkBuild = (int(revision), build)
+                        if revision and not lastTrunkBuild:
+                            lastTrunkBuild = (revision, build)
                     except TypeError:
                         pass
             else:
-                log.msg(format="skipping build %(number)d of branch %(branch)r at r%(revision)s",
+                log.msg(format="skipping build %(number)d of branch %(branch)r at %(revision)s",
                         number=number, revision=revision, branch=branch)
         log.msg(format="falling off the end after searching %(count)d builds",
                 count=status.getNumber() - number)
         if lastTrunkBuild:
             revision, build = lastTrunkBuild
-            log.msg(format="Using build %(number)d at r%(revision)s instead of r%(targetRevision)s",
+            log.msg(format="Using build %(number)d at %(revision)s instead of %(targetRevision)s",
                         number=build.getNumber(), revision=revision, targetRevision=targetRevision)
             return build
         return None

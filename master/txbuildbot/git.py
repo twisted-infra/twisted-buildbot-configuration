@@ -123,7 +123,7 @@ class MergeForward(Source):
                               collectStdout=True)
 
     def _setLintVersion(self, version):
-        self.setProperty("lint_revision", version, "merge-forward")
+        self.setProperty("lint_revision", version.strip(), "merge-forward")
 
 
     def _dovccmd(self, command, abandonOnFailure=True, collectStdout=False, extra_args={}):

@@ -98,7 +98,7 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
                 ExpectShell(workdir='wkdir',
                             command=['git', 'rev-parse', 'HEAD~1'],
                             env=self.env)
-                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000\n")
                 + 0
         )
         self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
@@ -123,7 +123,7 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
                 ExpectShell(workdir='wkdir',
                             command=['git', 'merge-base', 'HEAD', 'FETCH_HEAD'],
                             env=self.env)
-                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000\n")
                 + 0
         )
         self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
@@ -142,7 +142,7 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
                 ExpectShell(workdir='wkdir',
                             command=['git', 'merge-base', 'HEAD', 'FETCH_HEAD'],
                             env=self.env)
-                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000\n")
                 + 0
         )
         self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])

@@ -2,10 +2,12 @@ import mock
 from twisted.trial.unittest import TestCase
 from buildbot.test.util import sourcesteps
 from buildbot.steps.source.git import Git
-from buildbot.status.results import SUCCESS, SKIPPED
+from buildbot.status.results import SUCCESS
 from buildbot.test.fake.remotecommand import ExpectShell
 
-from txbuildbot.git import TwistedGit, MergeForward
+from txbuildbot.git import (
+        TwistedGit, MergeForward,
+        mungeBranch, isTrunk, isRelease)
 
 class TestTwistedGit(sourcesteps.SourceStepMixin, TestCase):
     """
@@ -71,6 +73,14 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
     Tests for L{MergeForward}.
     """
 
+    env = {
+        'GIT_AUTHOR_EMAIL': 'buildbot@twistedmatrix.com',
+        'GIT_AUTHOR_NAME': 'Twisted Buildbot',
+        'GIT_COMMITTER_EMAIL': 'buildbot@twistedmatrix.com',
+        'GIT_COMMITTER_NAME': 'Twisted Buildbot',
+    }
+
+
     def setUp(self):
         return self.setUpSourceStep()
 
@@ -82,36 +92,108 @@ class TestMergeForward(sourcesteps.SourceStepMixin, TestCase):
         self.setupStep(MergeForward(repourl='git://twisted'),
                        {'branch': branch})
 
-    def assertMerge(self, branch):
-        self.buildStep(branch)
+    def test_trunk(self):
+        self.buildStep('trunk')
         self.expectCommands(
                 ExpectShell(workdir='wkdir',
-                            command=['git', 'pull',
-                                '--no-ff', '--no-stat', '--no-edit',
-                                'git://twisted', 'trunk'],
-                            usePTY='slave-config')
-                + 0,
+                            command=['git', 'rev-parse', 'HEAD~1'],
+                            env=self.env)
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + 0
         )
         self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
+        self.expectProperty('lint_revision', 'deadbeef00000000000000000000000000000000')
         return self.runStep()
 
-    def assertSkipped(self, branch):
-        self.buildStep(branch)
-        self.expectOutcome(result=SKIPPED, status_text=['merge', 'forward', 'skipped'])
-        self.expectHidden(True)
+
+    def test_branch(self):
+        self.buildStep('destroy-the-sun-5000')
+        self.expectCommands(
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'fetch',
+                                'git://twisted', 'trunk'],
+                            env=self.env)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'merge',
+                                '--no-ff', '--no-stat',
+                                'FETCH_HEAD'],
+                            env=self.env)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'merge-base', 'HEAD', 'FETCH_HEAD'],
+                            env=self.env)
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + 0
+        )
+        self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
+        self.expectProperty('lint_revision', 'deadbeef00000000000000000000000000000000')
         return self.runStep()
 
-    def test_mergeBranch(self):
-        return self.assertMerge('/branches/radical-feature-9999')
 
-    def test_skipTrunk(self):
-        return self.assertSkipped('/trunk')
+    def test_releaseBranch(self):
+        self.buildStep('releases/release-23.2-12345')
+        self.expectCommands(
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'fetch',
+                                'git://twisted', 'trunk'],
+                            env=self.env)
+                + 0,
+                ExpectShell(workdir='wkdir',
+                            command=['git', 'merge-base', 'HEAD', 'FETCH_HEAD'],
+                            env=self.env)
+                + ExpectShell.log('stdio', stdout="deadbeef00000000000000000000000000000000")
+                + 0
+        )
+        self.expectOutcome(result=SUCCESS, status_text=['merge', 'forward'])
+        self.expectProperty('lint_revision', 'deadbeef00000000000000000000000000000000')
+        return self.runStep()
 
-    def test_skipEmpty(self):
-        return self.assertSkipped('')
 
-    def test_skipNone(self):
-        return self.assertSkipped(None)
+class UtilsTestCase(TestCase):
+    """
+    Tests for branch-name inspecting functions.
+    """
 
-    def test_skipReleases(self):
-        return self.assertSkipped('/branches/releases/release-28.0-9999')
+    def test_mungeBranch(self):
+        self.assertEqual(mungeBranch('trunk'),
+                         'trunk')
+        self.assertEqual(mungeBranch('/trunk'),
+                         'trunk')
+        self.assertEqual(mungeBranch(''),
+                         'trunk')
+        self.assertEqual(mungeBranch('/branches/destroy-the-sun-5000'),
+                         'destroy-the-sun-5000')
+        self.assertEqual(mungeBranch('branches/destroy-the-sun-5000'),
+                         'destroy-the-sun-5000')
+        self.assertEqual(mungeBranch('destroy-the-sun-5000'),
+                         'destroy-the-sun-5000')
+        self.assertEqual(mungeBranch('/branches/releases/release-23.2-12345'),
+                         'releases/release-23.2-12345')
+        self.assertEqual(mungeBranch('branches/releases/release-23.2-12345'),
+                         'releases/release-23.2-12345')
+        self.assertEqual(mungeBranch('releases/release-23.2-12345'),
+                         'releases/release-23.2-12345')
+
+
+    def test_isTrunk(self):
+        self.assertTrue(isTrunk('trunk'))
+        self.assertTrue(isTrunk('/trunk'))
+        self.assertTrue(isTrunk(''))
+        self.assertFalse(isTrunk('/branches/destroy-the-sun-5000'))
+        self.assertFalse(isTrunk('branches/destroy-the-sun-5000'))
+        self.assertFalse(isTrunk('destroy-the-sun-5000'))
+        self.assertFalse(isTrunk('/branches/releases/release-23.2-12345'))
+        self.assertFalse(isTrunk('branches/releases/release-23.2-12345'))
+        self.assertFalse(isTrunk('releases/release-23.2-12345'))
+
+    def test_isRelease(self):
+        self.assertFalse(isRelease('trunk'))
+        self.assertFalse(isRelease('/trunk'))
+        self.assertFalse(isRelease(''))
+        self.assertFalse(isRelease('/branches/destroy-the-sun-5000'))
+        self.assertFalse(isRelease('branches/destroy-the-sun-5000'))
+        self.assertFalse(isRelease('destroy-the-sun-5000'))
+        self.assertTrue(isRelease('/branches/releases/release-23.2-12345'))
+        self.assertTrue(isRelease('branches/releases/release-23.2-12345'))
+        self.assertTrue(isRelease('releases/release-23.2-12345'))

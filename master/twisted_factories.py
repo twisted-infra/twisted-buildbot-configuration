@@ -109,6 +109,7 @@ class TwistedBaseFactory(BuildFactory):
                 ("pywin32", "win32api",
                  "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
                 ("pyasn1", "pyasn1", "pyasn1.majorVersionId"),
+                ("cffi", "cffi", "cffi.__version"),
                 ],
             pkg_resources=[
                 ("subunit", "subunit"),

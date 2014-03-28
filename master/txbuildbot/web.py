@@ -1,7 +1,11 @@
+import time
+
 from buildbot.status.web.base import HtmlResource, map_branches, build_get_class, path_to_builder, path_to_build
 from buildbot.status.builder import SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
 from buildbot.status.web.waterfall import WaterfallStatusResource
 from buildbot.status import html
+from buildbot.util import formatInterval
+
 from twisted.web.util import Redirect
 from twisted.internet import defer
 
@@ -85,15 +89,19 @@ class TenBoxesPerBuilder(HtmlResource):
         for bn in builders:
             builder = status.getBuilder(bn)
             state = builder.getState()[0]
+            if state == 'building':
+                state = 'idle'
             row = tags.tr()
             table(row)
             builderLink = path_to_builder(req, builder)
             row(tags.td(class_="box %s" % (state,))(tags.a(href=builderLink)(bn)))
 
-            # current_box = ICurrentBox(builder).getBox(status)
-            # row(tags.xml(current_box.td(align="center")))
+            builds = sorted([
+                    build for build in builder.getCurrentBuilds()
+                    if set(map_branches(branches)) & builder._getBuildBranches(build)
+                    ], key=lambda build: build.getNumber(), reverse=True)
 
-            builds = list(builder.generateFinishedBuilds(map_branches(branches),
+            builds.extend(builder.generateFinishedBuilds(map_branches(branches),
                                                          num_builds=num_builds))
             if builds:
                 for b in builds:
@@ -106,13 +114,25 @@ class TenBoxesPerBuilder(HtmlResource):
                     # buildbot has disgusting bugs.
                     if not label or label == "None" or len(str(label)) > 20:
                         label = "#%d" % b.getNumber()
-                    row(                         tags.td(
+                    if b.isFinished():
+                        text = b.getText()
+                    else:
+                        when = b.getETA()
+                        if when:
+                            text = [
+                                "%s" % (formatInterval(when),),
+                                "%s" % (time.strftime("%H:%M:%S", time.localtime(time.time() + when)),)
+                                ]
+                        else:
+                            text = []
+
+                    row(tags.td(
                             align="center",
                             bgcolor=_backgroundColors[b.getResults()],
                             class_=("LastBuild box ", build_get_class(b)))([
                                 (element, tags.br)
                                 for element
-                                in [tags.a(href=url)(label)] + b.getText()]) )
+                                in [tags.a(href=url)(label)] + text]) )
             else:
                 row(tags.td(class_="LastBuild box")("no build"))
         defer.returnValue((yield flattenString(req, tag)))

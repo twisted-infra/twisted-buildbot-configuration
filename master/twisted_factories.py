@@ -974,7 +974,7 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
                 repourl="https://github.com/github/twistedchecker",
                 branch="master",
                 alwaysUseLatest=True,
-                mode="incremental",
+                mode="update",
                 workdir="twistedchecker",
             )
         ] + source

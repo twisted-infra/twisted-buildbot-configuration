@@ -8,7 +8,7 @@ from buildbot.process.factory import BuildFactory, s
 from buildbot.steps import shell, transfer
 from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand, SetProperty
-from buildbot.steps.source import Bzr, Mercurial
+from buildbot.steps.source import Bzr, Mercurial, Git
 from buildbot.steps.slave import RemoveDirectory
 from txbuildbot.pypy import Translate
 
@@ -968,16 +968,16 @@ class TwistedPython3Tests(TwistedBaseFactory):
 
 class TwistedCheckerBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python"):
-        # Add twistedchecker bzr step first, so got_revision is twisted's
+        # Add twistedchecker Git step first, so got_revision is twisted's
         source = [
-                Bzr(
-                    baseURL="lp:twistedchecker",
-                    defaultBranch="",
-                    alwaysUseLatest=True,
-                    mode="update",
-                    workdir="twistedchecker",
-                    )
-                ] + source
+            Git(
+                baseURL="https://github.com/github/twistedchecker",
+                defaultBranch="master",
+                alwaysUseLatest=True,
+                mode="update",
+                workdir="twistedchecker",
+            )
+        ] + source
         TwistedBaseFactory.__init__(self, python, source, False)
 
         self.addStep(CheckCodesByTwistedChecker,

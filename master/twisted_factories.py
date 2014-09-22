@@ -971,10 +971,10 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
         # Add twistedchecker Git step first, so got_revision is twisted's
         source = [
             Git(
-                baseURL="https://github.com/github/twistedchecker",
-                defaultBranch="master",
+                repourl="https://github.com/github/twistedchecker",
+                branch="master",
                 alwaysUseLatest=True,
-                mode="update",
+                mode="incremental",
                 workdir="twistedchecker",
             )
         ] + source

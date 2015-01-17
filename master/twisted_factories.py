@@ -981,8 +981,8 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
         TwistedBaseFactory.__init__(self, python, source, False)
 
         self.addStep(CheckCodesByTwistedChecker,
-            env={"PATH": ["../twistedchecker/bin","${PATH}"],
-                 "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})
+                     env={"PATH": ["../twistedchecker/bin","${PATH}"],
+                          "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})
 
 class PyFlakesBuildFactory(TwistedBaseFactory):
     """

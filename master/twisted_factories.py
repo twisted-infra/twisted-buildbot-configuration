@@ -981,6 +981,7 @@ class TwistedCheckerBuildFactory(TwistedBaseFactory):
         TwistedBaseFactory.__init__(self, python, source, False)
 
         self.addStep(CheckCodesByTwistedChecker,
+                     want_stderr=False,
                      env={"PATH": ["../twistedchecker/bin","${PATH}"],
                           "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})
 

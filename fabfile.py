@@ -3,11 +3,10 @@ import os
 from fabric.api import settings, run, env, cd, puts, abort
 from fabric.contrib import files
 
-from braid import git, cron, pip, archive
+from braid import git, cron, pip, archive, config
 from braid.twisted import service
 from braid.tasks import addTasks
 from braid.utils import confirm
-from braid import config
 
 __all__ = ['config']
 

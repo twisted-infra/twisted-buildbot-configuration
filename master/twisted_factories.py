@@ -964,7 +964,7 @@ class TwistedPython3Tests(TwistedBaseFactory):
         self.addStep(RemovePYCs)
         self.addStep(
             shell.ShellCommand,
-            command=self.python + [ "admin/run-python3-tests" ])
+            command=["bash", "admin/run-python3-tests-venv" ] + self.python)
 
 class TwistedCheckerBuildFactory(TwistedBaseFactory):
     def __init__(self, source, python="python"):

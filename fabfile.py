@@ -3,11 +3,10 @@ import os
 from fabric.api import settings, run, env, cd, puts, abort
 from fabric.contrib import files
 
-from braid import git, cron, pip, archive
+from braid import git, cron, pip, archive, config
 from braid.twisted import service
 from braid.tasks import addTasks
 from braid.utils import confirm
-from braid import config
 
 __all__ = ['config']
 
@@ -52,7 +51,9 @@ class Buildbot(service.Service):
         Update private config.
         """
         with settings(user=self.serviceUser):
-            git.branch('tomprince@svn.twistedmatrix.com:infra/buildbot-private.git', '~/private')
+            git.branch(
+                'buildbot@wolfwood.twistedmatrix.com:/git/buildbot-secrets',
+                '~/private')
 
     def update(self, _installDeps=False):
         """

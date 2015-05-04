@@ -6,10 +6,8 @@ from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
 from buildbot.steps import shell, transfer
-from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.source import Bzr, Mercurial, Git
-from buildbot.steps.slave import RemoveDirectory
+from buildbot.steps.source import Mercurial, Git
 from txbuildbot.pypy import Translate
 
 from twisted_steps import ProcessDocs, ReportPythonModuleVersions, \

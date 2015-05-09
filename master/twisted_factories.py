@@ -505,6 +505,34 @@ class TwistedCoveragePyFactory(TwistedBaseFactory):
             compress='gz')
 
 
+class TwistedPython3CoveragePyFactory(TwistedBaseFactory):
+    OMIT_PATHS = [
+        '/usr/*',
+        '*/tw-py3-*/*',
+        ]
+
+    def __init__(self, python, source):
+        TwistedBaseFactory.__init__(self, python, source, False)
+        self.addStep(
+            shell.ShellCommand,
+            command = self.python + [
+                "-m", "coverage", "run", "admin/run-python3-tests", "--omit",
+                ','.join(self.OMIT_PATHS), "--branch"])
+        self.addStep(
+            shell.ShellCommand,
+            command=self.python + [
+                "-m", "coverage", 'html', '-d', 'twisted-coverage', '--omit',
+                ','.join(self.OMIT_PATHS), '-i'])
+        self.addStep(
+            transfer.DirectoryUpload,
+            workdir='Twisted',
+            slavesrc='twisted-coverage',
+            masterdest=WithProperties('build_products/twisted-coverage.py/twisted-py3-coverage.py-r%(got_revision)s'),
+            url=WithProperties('/builds/twisted-coverage.py/twisted-py3-coverage.py-r%(got_revision)s/'),
+            blocksize=2 ** 16,
+            compress='gz')
+
+
 class TwistedBenchmarksFactory(TwistedBaseFactory):
     def __init__(self, python, source):
         TwistedBaseFactory.__init__(self, python, source, False)

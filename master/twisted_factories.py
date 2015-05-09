@@ -517,7 +517,7 @@ class TwistedPython3CoveragePyFactory(TwistedBaseFactory):
             shell.ShellCommand,
             command = self.python + [
                 "-m", "coverage", "run", "--omit", ','.join(self.OMIT_PATHS),
-                "--branch" "admin/run-python3-tests", ])
+                "--branch", "admin/run-python3-tests"])
         self.addStep(
             shell.ShellCommand,
             command=self.python + [

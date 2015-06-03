@@ -604,7 +604,7 @@ class ProcessDocs(ShellCommand):
     warnOnWarnings = 1
     command = [
         "python",
-        "bin/admin/build-docs", ".", "doc/core/howto/template.tpl"]
+        "bin/admin/build-docs", "."]
     description = ["processing", "docs"]
     descriptionDone = ["docs"]
     # TODO: track output and time

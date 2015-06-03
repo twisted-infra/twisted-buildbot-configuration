@@ -106,7 +106,7 @@ class TwistedBaseFactory(BuildFactory):
                 ("pygtk", "gtk", "gtk.pygtk_version"),
                 ("pywin32", "win32api",
                  "win32api.GetFileVersionInfo(win32api.__file__, chr(92))['FileVersionLS'] >> 16"),
-                ("pyasn1", "pyasn1", "pyasn1.majorVersionId"),
+                ("pyasn1", "pyasn1", "pyasn1.__version__"),
                 ("cffi", "cffi", "cffi.__version__"),
                 ],
             pkg_resources=[

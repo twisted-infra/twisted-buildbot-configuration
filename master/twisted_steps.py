@@ -592,7 +592,7 @@ class Trial(ShellCommand):
     def getText2(self, cmd, results):
         return self.text2
 
-    
+
 class ProcessDocs(ShellCommand):
     """
     I build all docs. This requires some LaTeX packages to be
@@ -734,10 +734,10 @@ class ReportPythonModuleVersions(ShellCommand):
             return FAILURE
         return SUCCESS
 
-    
+
 class BuildDebs(ShellCommand):
     """I build the .deb packages."""
- 
+
     name = "debuild"
     flunkOnFailure = 1
     command = ["debuild", "-uc", "-us"]

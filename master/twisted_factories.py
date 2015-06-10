@@ -2,6 +2,8 @@
 Build classes specific to the Twisted codebase
 """
 
+import os
+
 from buildbot.process.properties import WithProperties
 from buildbot.process.base import Build
 from buildbot.process.factory import BuildFactory
@@ -68,7 +70,10 @@ class TwistedBaseFactory(BuildFactory):
         source.insert(0, fixPermissions)
 
 
-    def __init__(self, python, source, uncleanWarnings, trialTests=None, trialMode=None):
+    def __init__(
+        self, python, source, uncleanWarnings, trialTests=None,
+        trialMode=None, virtualenv=False,
+            ):
         if not isinstance(source, list):
             source = [source]
         else:
@@ -91,6 +96,12 @@ class TwistedBaseFactory(BuildFactory):
         if trialTests is None:
             trialTests = [WithProperties("%(test-case-name:~twisted)s")]
         self.trialTests = trialTests
+
+        if virtualenv:
+            self.addStep(
+                shell.ShellCommand,
+                command=['virtualenv', '-p', self.python, 'venv'],
+                )
 
         self.addStep(
             ReportPythonModuleVersions,
@@ -131,6 +142,25 @@ class TwistedBaseFactory(BuildFactory):
             kw['python'] = self.python
         self.addStep(TwistedTrial, trialMode=trialMode, **kw)
 
+
+class VirtualEnvBaseFactory(TwistedBaseFactory):
+    """
+    Run all steps in a Python virtualenv.
+    """
+    def __init__(self, source, python="python"):
+        TwistedBaseFactory.__init__(
+            self, python, source, uncleanWarnings=False, virtualenv=True)
+
+    def addStep(self, step, *args, **kwargs):
+        """
+        Update PATH environment of the step so that virtualenv path is listed
+        first.
+        """
+        env = kwargs.get('env', {})
+        path = env.get('PATH', '')
+        env['PATH'] = './venv/bin' + os.pathsep + path + os.pathsep +'${PATH}'
+        kwargs['env'] = env
+        TwistedBaseFactory.addStep(self, step, *args, **kwargs)
 
 
 class TwistedDocumentationBuildFactory(TwistedBaseFactory):
@@ -553,24 +583,19 @@ class TwistedPython3Tests(TwistedBaseFactory):
             shell.ShellCommand,
             command=self.python + ["admin/run-python3-tests"])
 
-class TwistedCheckerBuildFactory(TwistedBaseFactory):
-    def __init__(self, source, python="python"):
-        # Add twistedchecker Git step first, so got_revision is twisted's
-        source = [
-            Git(
-                repourl="https://github.com/twisted/twistedchecker",
-                branch="master",
-                alwaysUseLatest=True,
-                mode="update",
-                workdir="twistedchecker",
-            )
-        ] + source
-        TwistedBaseFactory.__init__(self, python, source, False)
 
-        self.addStep(CheckCodesByTwistedChecker,
-                     want_stderr=False,
-                     env={"PATH": ["../twistedchecker/bin","${PATH}"],
-                          "PYTHONPATH": ["../twistedchecker","${PYTHONPATH}"]})
+class TwistedCheckerBuildFactory(VirtualEnvBaseFactory):
+    """
+    Run twistedchecker check from an virtualenv.
+    """
+
+    def __init__(self, source, python="python2.7"):
+        VirtualEnvBaseFactory.__init__(self, source, python)
+        self.addStep(
+            shell.ShellCommand,
+            command=['pip', 'install', 'twistedchecker==0.3.0'])
+        self.addStep(CheckCodesByTwistedChecker, want_stderr=False)
+
 
 class PyFlakesBuildFactory(TwistedBaseFactory):
     """

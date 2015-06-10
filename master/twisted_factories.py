@@ -98,9 +98,18 @@ class TwistedBaseFactory(BuildFactory):
         self.trialTests = trialTests
 
         if virtualenv:
+            # When reason = clean we remove the virtualenv folder.
             self.addStep(
                 shell.ShellCommand,
-                command=['virtualenv', '-p', self.python, 'venv'],
+                name='clean venv - only when reason=clean',
+                command=['rm', '-rf', self._virtualEnvPath],
+                doStepIf=lambda step: step.build.getProperties()['reason'] == 'clean'
+                )
+            # Create the virtualenv.
+            self.addStep(
+                shell.ShellCommand,
+                command=[
+                    'virtualenv', '-p', self.python[0], self._virtualEnvPath],
                 )
 
         self.addStep(
@@ -143,24 +152,33 @@ class TwistedBaseFactory(BuildFactory):
         self.addStep(TwistedTrial, trialMode=trialMode, **kw)
 
 
-class VirtualEnvBaseFactory(TwistedBaseFactory):
-    """
-    Run all steps in a Python virtualenv.
-    """
-    def __init__(self, source, python="python"):
-        TwistedBaseFactory.__init__(
-            self, python, source, uncleanWarnings=False, virtualenv=True)
+    @property
+    def _virtualEnvBin(self):
+        """
+        Path to the virtualenv bin folder.
+        """
+        return os.path.join('..', 'venv', 'bin')
 
-    def addStep(self, step, *args, **kwargs):
+
+    @property
+    def _virtualEnvPath(self):
         """
-        Update PATH environment of the step so that virtualenv path is listed
-        first.
+        Path to the root virtualenv folder.
         """
+        return os.path.join('..', 'venv')
+
+
+    def addVirtualEnvStep(self, step, **kwargs):
+        """
+        Add a step which is executed with virtualenv path.
+        """
+        # Update PATH environment so that the virtualenv is listed first.
         env = kwargs.get('env', {})
         path = env.get('PATH', '')
-        env['PATH'] = './venv/bin' + os.pathsep + path + os.pathsep +'${PATH}'
+        env['PATH'] = os.pathsep.join([self._virtualEnvBin, path, '${PATH}'])
         kwargs['env'] = env
-        TwistedBaseFactory.addStep(self, step, *args, **kwargs)
+        self.addStep(step, **kwargs)
+
 
 
 class TwistedDocumentationBuildFactory(TwistedBaseFactory):
@@ -584,17 +602,23 @@ class TwistedPython3Tests(TwistedBaseFactory):
             command=self.python + ["admin/run-python3-tests"])
 
 
-class TwistedCheckerBuildFactory(VirtualEnvBaseFactory):
+class TwistedCheckerBuildFactory(TwistedBaseFactory):
     """
     Run twistedchecker check from an virtualenv.
     """
 
     def __init__(self, source, python="python2.7"):
-        VirtualEnvBaseFactory.__init__(self, source, python)
-        self.addStep(
+        TwistedBaseFactory.__init__(
+            self,
+            source=source,
+            python=python,
+            uncleanWarnings=False,
+            virtualenv=True,
+            )
+        self.addVirtualEnvStep(
             shell.ShellCommand,
             command=['pip', 'install', 'twistedchecker==0.3.0'])
-        self.addStep(CheckCodesByTwistedChecker, want_stderr=False)
+        self.addVirtualEnvStep(CheckCodesByTwistedChecker, want_stderr=False)
 
 
 class PyFlakesBuildFactory(TwistedBaseFactory):

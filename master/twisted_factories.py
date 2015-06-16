@@ -98,18 +98,15 @@ class TwistedBaseFactory(BuildFactory):
         self.trialTests = trialTests
 
         if virtualenv:
-            # When reason = clean we remove the virtualenv folder.
-            self.addStep(
-                shell.ShellCommand,
-                name='clean venv - only when reason=clean',
-                command=['rm', '-rf', self._virtualEnvPath],
-                doStepIf=lambda step: step.build.getProperties()['reason'] == 'clean'
-                )
-            # Create the virtualenv.
+            # Each time we create a new virtualenv as latest pip can build
+            # wheels on the fly and install them from user's cache.
             self.addStep(
                 shell.ShellCommand,
                 command=[
-                    'virtualenv', '-p', self.python[0], self._virtualEnvPath],
+                    'virtualenv', '--clear',
+                    '-p', self.python[0],
+                    self._virtualEnvPath,
+                    ],
                 )
 
         self.addStep(
